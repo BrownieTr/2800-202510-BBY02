@@ -7,7 +7,7 @@ export default function Landing() {
         <div>
             <header>
                 <div>
-                    <Navbar />
+                    <Navbar brandName='PlayPal' />
                 </div>
             </header>
 
