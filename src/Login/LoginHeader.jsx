@@ -1,7 +1,7 @@
 function LoginHeader() {
     return(
         <div>
-            <h1>PlayPal</h1>
+            <h1 className="text-2xl font-bold">PlayPal</h1>
         </div>
     );
 }

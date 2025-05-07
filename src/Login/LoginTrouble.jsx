@@ -1,7 +1,7 @@
 function LoginTrouble(){
     return(
         <div>
-            <a>Trouble loggin in?</a>
+            <a href="#">Trouble loggin in?</a>
         </div>
     );
 }

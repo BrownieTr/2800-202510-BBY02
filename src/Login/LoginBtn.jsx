@@ -1,7 +1,7 @@
-function LoginBtn(){
+function LoginBtn({provider}){
     return(
-        <div>
-            <button>Log in with X</button>
+        <div className="w-full">
+            <button className="w-full py-3 px-4 font-medium rounded-lg">Log in with {provider}</button>
         </div>
     );
 }
