@@ -10,7 +10,7 @@ import Menu from './pages/landing.jsx' //remove this when finish
 ReactDOM.createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <Menu /> //replace this with App when finished
+      <Menu />  {/*Remove this when finish */}
     </BrowserRouter>
   </StrictMode>
 );

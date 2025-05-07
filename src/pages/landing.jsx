@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '../components/layout/navbar';
 import Features from '../sections/features';
+import Footer from '../components/layout/footer';
 
 export default function Landing() {
     return (
@@ -39,10 +40,7 @@ export default function Landing() {
                     </form>
                 </section>
             </main>
-
-            <footer>
-                <p>&copy; 2025 Your App. All rights reserved.</p>
-            </footer>
+            <Footer brandName='PlayPal'/>
         </div>
     );
 }
