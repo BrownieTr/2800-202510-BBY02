@@ -1,14 +1,14 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 import Button from '../ui/button';
 
 export default function Navbar() {
   return (
     <nav>
-      <div className="logo">PlayPal</div>
+      <div className="logo">Your Brand</div>
       <ul>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#contact">Contact</a></li>
+        <li><Link to="/">Home</Link></li>
+        <li><Link to="/about">About</Link></li>
+        <li><Link to="/contact">Contact</Link></li>
       </ul>
       <Button>Sign Up</Button>
     </nav>
