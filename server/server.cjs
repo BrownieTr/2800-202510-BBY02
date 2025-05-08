@@ -55,3 +55,204 @@ app.listen(PORT, () => {
   connect.connect();
   console.log('server is running on port ' + PORT);
 })
+
+// Matchmaking Routes
+
+// Save match preferences
+app.post('/api/matchmaking/save-preferences', async (req, res) => {
+  // Make sure user is logged in
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+  
+  try {
+    const userId = req.session.userId;
+    const { sport, location, skillLevel, mode, matchType } = req.body;
+    
+    // Connect to database
+    const db = connect.db();
+    
+    // Remove any existing preferences
+    await db.collection('matchPreferences').deleteMany({ 
+      userId: userId 
+    });
+    
+    // Save new preferences
+    await db.collection('matchPreferences').insertOne({
+      userId: userId,
+      sport: sport,
+      location: location,
+      skillLevel: skillLevel,
+      mode: mode,
+      matchType: matchType,
+      timestamp: new Date()
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving preferences:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Check for a match
+app.get('/api/matchmaking/check-for-match', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+  
+  try {
+    const userId = req.session.userId;
+    const db = connect.db();
+    
+    // Get the user's preferences
+    const myPreferences = await db.collection('matchPreferences').findOne({ userId: userId });
+    
+    if (!myPreferences) {
+      return res.json({ matchFound: false });
+    }
+    
+    // Look for other users with matching preferences
+    const potentialMatch = await db.collection('matchPreferences').findOne({
+      userId: { $ne: userId }, // Not the current user
+      sport: myPreferences.sport,
+      location: myPreferences.location,
+      skillLevel: myPreferences.skillLevel,
+      mode: myPreferences.mode,
+      matchType: myPreferences.matchType
+    });
+    
+    if (!potentialMatch) {
+      return res.json({ matchFound: false });
+    }
+    
+    // Get user details
+    const user1 = await db.collection('users').findOne({ _id: userId });
+    const user2 = await db.collection('users').findOne({ _id: potentialMatch.userId });
+    
+    // Create the match
+    const matchData = {
+      matchID: `match_${userId}_${potentialMatch.userId}_${Date.now()}`,
+      player1: userId,
+      player1Name: user1 ? user1.name : 'Unknown Player',
+      player2: potentialMatch.userId,
+      player2Name: user2 ? user2.name : 'Unknown Player',
+      sport: myPreferences.sport,
+      location: myPreferences.location,
+      skillLevel: myPreferences.skillLevel,
+      mode: myPreferences.mode,
+      matchType: myPreferences.matchType,
+      timestamp: new Date().toLocaleString(),
+      status: 'pending'
+    };
+    
+    // Save match to database
+    await db.collection('matches').insertOne(matchData);
+    
+    // Remove both users from matchmaking queue
+    await db.collection('matchPreferences').deleteMany({
+      userId: { $in: [userId, potentialMatch.userId] }
+    });
+    
+    return res.json({ 
+      matchFound: true,
+      match: matchData
+    });
+  } catch (error) {
+    console.error('Error checking for matches:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create a match
+app.post('/api/matchmaking/create-match', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+  
+  try {
+    const matchData = req.body;
+    const db = connect.db();
+    
+    // Save match to database
+    await db.collection('matches').insertOne(matchData);
+    
+    // Remove players from matchmaking queue
+    await db.collection('matchPreferences').deleteMany({
+      userId: { $in: [matchData.player1, matchData.player2] }
+    });
+    
+    res.json({ success: true, match: matchData });
+  } catch (error) {
+    console.error('Error creating match:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Leave matchmaking queue
+app.post('/api/matchmaking/leave-queue', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+  
+  try {
+    const userId = req.session.userId;
+    const db = connect.db();
+    
+    // Remove from matchmaking queue
+    await db.collection('matchPreferences').deleteMany({ userId: userId });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error leaving queue:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get a user's matches
+app.get('/api/matchmaking/user-matches', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+  
+  try {
+    const userId = req.session.userId;
+    const db = connect.db();
+    
+    // Find matches where user is player1 or player2
+    const matches = await db.collection('matches').find({
+      $or: [
+        { player1: userId },
+        { player2: userId }
+      ]
+    }).toArray();
+    
+    res.json({ matches: matches });
+  } catch (error) {
+    console.error('Error getting user matches:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get specific match details
+app.get('/api/matchmaking/match/:matchId', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+  
+  try {
+    const matchId = req.params.matchId;
+    const db = connect.db();
+    
+    const match = await db.collection('matches').findOne({ matchID: matchId });
+    
+    if (!match) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    
+    res.json({ match: match });
+  } catch (error) {
+    console.error('Error getting match details:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
