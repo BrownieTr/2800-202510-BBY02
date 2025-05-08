@@ -46,12 +46,13 @@ export async function currentLocation() {
 /**
  * Calculates distance using haversine formula
  * @see https://en.wikipedia.org/wiki/Haversine_formula
- * Returns distance betweeen 2 points +- 2 km;
+ * Returns approx distance between 2 points in km
+ * Since distance should be small, the difference between calculated and actual distance 
+ * should be small as well
  */
 export function calculateDistance(lat1, lon1, lat2, lon2) {
   const latDelta = lat2 - lat1;
   const lonDelta = lon2 - lon1;
-  const allowance = 2;
   const haversine = (Math.sin(latDelta/2) * Math.sin(latDelta/2)) + (Math.cos(lon1)*Math.cos(lon2)*((1-Math.cos(lonDelta))/2))
 
   const haversine_radians = haversine * Math.PI/180;
