@@ -46,6 +46,18 @@ app.get('/users', async (req, res) => {
   res.send(data);
 });
 
+// Functionality in test, will continue when authentication is implemented
+app.get('/profile', async (req, res) => {
+  let db = connect.db();
+  if (req.session.authenticated) {
+    let data = await db.collection('users').find({email: email})
+                .project({name: 1 , email: 1, address: 1, country: 1, preferences: 1}).toArray();
+    res.send(data);
+  } else {
+    res.redirect("/")
+  }
+});
+
 app.get('*', (req,res) => {
   res.status(404);
   res.send("Requested route does not exist");
