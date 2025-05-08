@@ -46,15 +46,6 @@ app.get('/users', async (req, res) => {
   res.send(data);
 });
 
-app.get('*', (req,res) => {
-  res.status(404);
-  res.send("Requested route does not exist");
-})
-
-app.listen(PORT, () => {
-  connect.connect();
-  console.log('server is running on port ' + PORT);
-})
 
 // Matchmaking Routes
 
@@ -256,3 +247,13 @@ app.get('/api/matchmaking/match/:matchId', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+app.get('*', (req,res) => {
+  res.status(404);
+  res.send("Requested route does not exist");
+})
+
+app.listen(PORT, () => {
+  connect.connect();
+  console.log('server is running on port ' + PORT);
+})
