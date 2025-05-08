@@ -1,9 +1,7 @@
 import React from 'react';
 
-export default function Options() {
-
+export default function Options({onOptionClick}) {
     const strokeWidth = 0.65;
-
     const options = [
         {
             id: 1,
@@ -27,14 +25,18 @@ export default function Options() {
             title: "Log out"
         }
     ];
+    
+    const handleClick = (id) => {
+        onOptionClick(id);
+    }
 
     return (
-        <section id="profiles">
-        <div className="profile-grid">
+        <section>
+        <div className="option-grid">
             {options.map(profile => (
-                <div key={profile.id} className="profile-card">
+                <div key={profile.id} className="option-card" onClick={()=>handleClick(profile.id)}>
                     {profile.icon}
-                    <div className="profile-icon"></div>
+                    <div className="option-icon"></div>
                     <h3>{profile.title}</h3>
                 </div>
             ))}

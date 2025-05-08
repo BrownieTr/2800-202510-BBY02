@@ -7,7 +7,8 @@ import Profile from './pages/profile';
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Profile />} />
+      <Route path="/" element={<Landing />} />
+      <Route path="/profile" element={<Profile/>} />
     </Routes>
   );
 }

@@ -12,7 +12,7 @@ const session = require('express-session')
 const cors = require('cors');
 const app = express();
 const MongoStore = require('connect-mongo');
-const PORT = process.env.PORT ||3000;
+const PORT = process.env.PORT || 3000;
 const mongoSecret = process.env.MONGO_SECRET || '123ase45'
 const nodeSecret = process.env.NODE_SECRET || 'aosijf1safd'
 app.use(cors());
