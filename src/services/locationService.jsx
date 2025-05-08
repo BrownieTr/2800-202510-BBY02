@@ -31,17 +31,37 @@ export default function Test() {
   )
 }
 
-// export function currentLocation() {
-//   console.log(1);
-//   const toReturn = []
-//   if(navigator.geolocation) {
-//     console.log(2)
-//     navigator.geolocation.getCurrentPosition((coords) => {
-//       console.log(3);
-//       toReturn[0] = coords.coords.latitude;
-//       toReturn[1] = coords.coords.longitude;
-//     })
-//   }
-//   console.log(toReturn)
-//   return toReturn
-// }
+export async function currentLocation() {
+  const toReturn = []
+  if(navigator.geolocation) {
+    await navigator.geolocation.getCurrentPosition((coords) => {
+      toReturn[0] = coords.coords.latitude;
+      toReturn[1] = coords.coords.longitude;
+    })
+  }
+  return toReturn
+}
+
+
+/**
+ * Calculates distance using haversine formula
+ * @see https://en.wikipedia.org/wiki/Haversine_formula
+ * Returns distance betweeen 2 points +- 2 km;
+ */
+export function calculateDistance(lat1, lon1, lat2, lon2) {
+  const latDelta = lat2 - lat1;
+  const lonDelta = lon2 - lon1;
+  const allowance = 2;
+  const haversine = (Math.sin(latDelta/2) * Math.sin(latDelta/2)) + (Math.cos(lon1)*Math.cos(lon2)*((1-Math.cos(lonDelta))/2))
+
+  const haversine_radians = haversine * Math.PI/180;
+  /**
+   * Average radius of earth, since radius at equator and radis at the poles differ
+   * @see https://en.wikipedia.org/wiki/Earth_radius
+   */
+  const radius = 6371.2 
+
+  const distance = haversine_radians * radius;
+  return distance;
+
+}
