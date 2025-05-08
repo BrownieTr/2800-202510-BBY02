@@ -1,0 +1,55 @@
+#root {
+    max-width: 1280px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.icon {
+  max-width: 2em;
+  padding: 0 1em 0 1em;
+}
+
+.icon:hover {
+  transform: scale(1.25);
+}
+
+/* Shake keyframes */
+@keyframes ring {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(15deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(4deg); }
+  100% { transform: rotate(0); }
+}
+
+.bell{
+    max-width: 2em;
+    padding: 0 1em 0 1em;
+}
+
+.bell:hover {
+    animation: ring 0.6s ease;
+}
+
+.profile {
+  justify-self: center;
+  width: 12em;
+}
+
+#profile-name {
+  margin-top: 0;
+}
+
+.profile-nav {
+  display: flex;
+  justify-content: space-between;
+}
+.profile-card {
+  display: flex;
+  border-top: 1px solid grey;
+}
+.profile-card:hover {
+  transform: scale(1.03);
+}
