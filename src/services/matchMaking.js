@@ -6,15 +6,17 @@
 // Get the current user info
 // import { getCurrentUser } from '........';
 
+import {currentLocation, calculateDistance} from './locationService.jsx'
+
 /**
  * Save a user's matchmaking preferences to the database
  * @param {string} sport - Which sport they want to play
- * @param {string} location - Where they want to play
+ * @param {string} distance - How far they're willing to travel for a match in km
  * @param {string} skillLevel - Their skill level
  * @param {string} mode - Game mode
  * @param {string} matchType - Type of match
  */
-export async function saveMatchPreferences(sport, location, skillLevel, mode, matchType) {
+export async function saveMatchPreferences(sport, distance, skillLevel, mode, matchType) {
   try {
     // Make sure user is logged in
     const loggedInUser = getCurrentUser();
@@ -22,8 +24,12 @@ export async function saveMatchPreferences(sport, location, skillLevel, mode, ma
       window.location.href = '/login';
       return;
     }
+
+    const location = await currentLocation();
+    const lat = location[0]
+    const lon = location[1]
     
-    console.log("Saving preferences:", { sport, location, skillLevel, mode, matchType });
+    console.log("Saving preferences:", { sport, distance, lat, lon, skillLevel, mode, matchType });
     
     // Send preferences to server
     const response = await fetch('/api/matchmaking/save-preferences', {
@@ -31,7 +37,9 @@ export async function saveMatchPreferences(sport, location, skillLevel, mode, ma
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sport: sport,
-        location: location,
+        distance: distance,
+        latitude: lat,
+        longitude: lon,
         skillLevel: skillLevel,
         mode: mode,
         matchType: matchType
@@ -118,7 +126,7 @@ export async function createMatch(player1, player2, matchDetails) {
       player2: player2,
       player2Name: player2Name,
       sport: matchDetails.sport,
-      location: matchDetails.location,
+      distance: matchDetails.distance,
       skillLevel: matchDetails.skillLevel,
       mode: matchDetails.mode,
       matchType: matchDetails.matchType,
