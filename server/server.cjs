@@ -7,6 +7,7 @@
  */
 require('dotenv').config({path: "./config.env"});
 const connect = require('./databaseConnection.cjs')
+import { calculateDistance } from '../src/services/locationService';
 const express = require('express');
 const session = require('express-session')
 const cors = require('cors');
@@ -58,7 +59,7 @@ app.post('/api/matchmaking/save-preferences', async (req, res) => {
   
   try {
     const userId = req.session.userId;
-    const { sport, location, skillLevel, mode, matchType } = req.body;
+    const { sport, distance, latitude, longitude, skillLevel, mode, matchType } = req.body;
     
     // Connect to database
     const db = connect.db();
@@ -72,7 +73,9 @@ app.post('/api/matchmaking/save-preferences', async (req, res) => {
     await db.collection('matchPreferences').insertOne({
       userId: userId,
       sport: sport,
-      location: location,
+      distance: distance, 
+      latitude: latitude,
+      longitude: longitude,
       skillLevel: skillLevel,
       mode: mode,
       matchType: matchType,
@@ -103,11 +106,21 @@ app.get('/api/matchmaking/check-for-match', async (req, res) => {
       return res.json({ matchFound: false });
     }
     
+    const matchDistance = await db.collection('matchPreferences').find({},{distance: 1, latitude: 1, longitude: 1})
+
+    const matchWithinDistance = []
+    matchDistance.each(function (err, item) {
+      const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, item.latitude, item.longitude);
+
+      if( distance < myPreferences.distance && distance < item.distance) {
+        matchWithinDistance.push(item.id)
+      }
+    });
+
     // Look for other users with matching preferences
     const potentialMatch = await db.collection('matchPreferences').findOne({
-      userId: { $ne: userId }, // Not the current user
+      userId: { $in:matchWithinDistance }, // Not the current user
       sport: myPreferences.sport,
-      location: myPreferences.location,
       skillLevel: myPreferences.skillLevel,
       mode: myPreferences.mode,
       matchType: myPreferences.matchType
@@ -118,8 +131,14 @@ app.get('/api/matchmaking/check-for-match', async (req, res) => {
     }
     
     // Get user details
-    const user1 = await db.collection('users').findOne({ _id: userId });
-    const user2 = await db.collection('users').findOne({ _id: potentialMatch.userId });
+    // const user1 = await db.collection('users').findOne({ _id: userId });
+    // const user2 = await db.collection('users').findOne({ _id: potentialMatch.userId });
+
+    //Not sure why the abovecode is calling the database again, but if there is a reason, it's left up there. 
+    const user1 = myPreferences;
+    const user2 = potentialMatch;
+
+    const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, potentialMatch.latitude, potentialMatch.longitude);
     
     // Create the match
     const matchData = {
@@ -129,7 +148,7 @@ app.get('/api/matchmaking/check-for-match', async (req, res) => {
       player2: potentialMatch.userId,
       player2Name: user2 ? user2.name : 'Unknown Player',
       sport: myPreferences.sport,
-      location: myPreferences.location,
+      distance: distance,
       skillLevel: myPreferences.skillLevel,
       mode: myPreferences.mode,
       matchType: myPreferences.matchType,
