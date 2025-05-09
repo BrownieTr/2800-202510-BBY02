@@ -60,7 +60,7 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
    * Average radius of earth, since radius at equator and radis at the poles differ
    * @see https://en.wikipedia.org/wiki/Earth_radius
    */
-  const radius = 6371.2 
+  const radius = 6371.2  
 
   const distance = haversine_radians * radius;
   return distance;
