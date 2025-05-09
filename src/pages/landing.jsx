@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '../components/layout/navbar';
 import Features from '../sections/features';
+import { Link } from 'react-router-dom';
 
 export default function Landing() {
     return (
@@ -16,6 +17,7 @@ export default function Landing() {
                     <h2>PlayPal</h2>
                     <p>Find People to play Sports Online</p>
                     <button>Get Started</button>
+                    <button><Link to="/chat">Chat function(testing)</Link></button>
                 </section>
 
                 <Features />
