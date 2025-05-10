@@ -8,9 +8,9 @@ export default function Profile() {
     const strokeWidth = 0.65;
     const [view, setView] = useState("profile");
     const handleOptionClick = (whichOptionClicked => {
-        if (whichOptionClicked === 1) {
+        if (whichOptionClicked === 2) {
             setView("details");
-        } else if (whichOptionClicked === 2) {
+        } else if (whichOptionClicked === 3) {
             setView("settings");
         } else {
             setView("profile");
@@ -41,9 +41,9 @@ export default function Profile() {
                     <h1 id="profile-name"> Your Name</h1>
                 </section>
 
-                    {view === "profile" && <Options onOptionClick={handleOptionClick}/>}
-                    {view === "details" && <Profile_Details onButtonClick={handleOptionClick}/>}
-                    {view ==="settings" && <Settings></Settings>}
+                {view === "profile" && <Options onOptionClick={handleOptionClick}/>}
+                {view === "details" && <Profile_Details onButtonClick={handleOptionClick}/>}
+                {view ==="settings" && <Settings></Settings>}
             </main>
         </div>
     );
