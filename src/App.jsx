@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom';
 import './styles/App.css'
-import Landing from './pages/landing';
+import Landing from './pages/about-us';
 import Location from './services/locationService';  
 
 function App() {
