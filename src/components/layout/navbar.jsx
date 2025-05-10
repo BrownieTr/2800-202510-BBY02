@@ -27,3 +27,4 @@ export default function Navbar({iconLeft, iconRight, header = "header"}) {
     </nav>
   );
 }
+
