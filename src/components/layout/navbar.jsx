@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from 'react-router-dom';
 import ClickableIcons from "../ui/clickableIcons";
 
+
 export default function Navbar({iconLeft, iconRight, header = "header"}) {
   return (
     <nav className="flex items-center justify-between px-4 py-3 ">
@@ -20,6 +21,7 @@ export default function Navbar({iconLeft, iconRight, header = "header"}) {
         <li><Link to="/about">About</Link></li>
         <li><Link to="/location">Location Service</Link></li>
         <li><Link to="/events">Events</Link></li>
+        <li><Link to="/chat">Chat</Link></li>
         <li><Link to="/profile">Profile</Link></li>
       </ul>
     </nav>
