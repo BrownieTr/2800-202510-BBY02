@@ -4,12 +4,13 @@ import { StrictMode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import './styles/index.css'
 import App from './App.jsx'
+import Events from './pages/events.jsx';
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <Events/>
     </BrowserRouter>
   </StrictMode>
 );
