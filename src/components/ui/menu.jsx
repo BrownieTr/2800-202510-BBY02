@@ -8,7 +8,7 @@ export default function menu({ items }) {
   return (
     <div>
       {items.map((item, index) => (
-        <MenuItem key={index} label={item.label} onClick={item.onClick} />
+        <MenuItem key={index} label={item.label} onClick={item.onClick} to={item.to} />
       ))}
     </div>
   );

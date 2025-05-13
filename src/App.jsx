@@ -15,8 +15,10 @@ function App() {
       <Route path="/location" element={<Location/>} />
       <Route path="/events" element={<Event/>} />
       <Route path="/chat" element={<Chat/>} />
+      <Route path="/messages" element={<Messages/>} />
+      <Route path="/home" element={<Index/>}/>
     </Routes>
   );
 }
 
-export default App
+export default App;
