@@ -1,7 +1,8 @@
 import React from "react";
+import Link from "./link";
 
-export default function clickableIcons({icon, link = '#', onClick}){
-    return(
-        <a onClick={onClick} className="no-underline visited:text-inherit" href={link}>{icon}</a>
-    );
+export default function clickableIcons({ icon, to, onClick }) {
+  return (
+    <Link to={to} component={icon}/>
+  );
 }

@@ -1,5 +1,6 @@
 import React from "react";
 import Navbar from "../components/layout/navbar";
+import Link from "../components/ui/link";
 
 export default function Index({ username = "username" }) {
   return (
@@ -28,14 +29,15 @@ export default function Index({ username = "username" }) {
             <path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
           </svg>
         }
+        iconRight2To={"/messages"}
       />
       <h1 className="mt-8 text-2xl font-bold text-center">
         Welcome {username}
       </h1>
       <div className="mt-8 flex items-center justify-center space-x-4">
-        <button className="rounded-2xl w-40 h-56 flex items-center justify-center text-lg">
+        <Link to="/events" component={<button className="rounded-2xl w-40 h-56 flex items-center justify-center text-lg">
           Events
-        </button>
+        </button>}/>
         <button className="rounded-2xl w-40 h-56 flex items-center justify-center text-lg">
           Sports Betting
         </button>
