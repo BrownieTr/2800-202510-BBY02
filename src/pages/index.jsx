@@ -31,7 +31,7 @@ export default function Index({ username = "username" }) {
         }
         iconRight2To={"/messages"}
       />
-      <h1 className="mt-8 text-2xl font-bold text-center">
+      <h1 className="mt-8 text-2xl font-bold text-red-700 text-center">
         Welcome {username}
       </h1>
       <div className="mt-8 flex items-center justify-center space-x-4">
