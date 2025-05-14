@@ -44,6 +44,16 @@ function App() {
           <Chat />
         </ProtectedRoute>
       } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <Messages />
+        </ProtectedRoute>
+      } />
+      <Route path="/home" element={
+        <ProtectedRoute>
+          <Index />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
