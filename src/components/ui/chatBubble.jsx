@@ -11,7 +11,7 @@ export default function chatBubble({
       <div className={`mb-1 ${isSent ? "text-right" : "text-left"}`}>
         <p className="text-sm">{username}</p>
       </div>
-      <div className={`flex items-start ${isSent ? "flex-row-reverse" : ""}`}>
+      <div className={`flex items-center ${isSent ? "flex-row-reverse" : ""}`}>
         <div className={`flex-shrink-0 ${isSent ? "ml-2" : "mr-2"}`}>
           <ProfileIcon
             profilePic={"https://www.dummyimage.com/25x25/000/fff"}
