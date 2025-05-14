@@ -32,23 +32,33 @@ export default function Index({ username = "username" }) {
         }
         iconRight2To={"/messages"}
       />
-      <h1 className="mt-8 text-2xl font-bold text-red-700 text-center">
+      <h1 className="mt-30 text-2xl font-bold text-center">
         Welcome {username}
       </h1>
-      <div className="mt-8 flex items-center justify-center space-x-4">
-        <Link to="/events" component={<button className="rounded-2xl w-40 h-56 flex items-center justify-center text-lg">
-          Events
-        </button>}/>
-        <button className="rounded-2xl w-40 h-56 flex items-center justify-center text-lg">
-          Sports Betting
+      
+      <div className="mt-40 flex items-center justify-between space-x-4">
+        <Link to="/events" component={
+          <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
+            events
+          </button>
+        }/>
+        <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg flex-col">
+          <div>sports</div>
+          <div>betting</div>
         </button>
       </div>
-      <div className="mt-8 flex items-center justify-center space-x-4">
-        <button className="rounded-xl w-20 h-20 flex items-center justify-center text-xs text-center">
-          Match Settings
+      
+      <div className="mt-50 flex items-center justify-center space-x-4">
+        <button className="rounded-xl w-20 h-20 bg-gray-200 flex items-center justify-center text-xs text-center flex-col">
+          <div>match</div>
+          <div>settings</div>
         </button>
-        <button className="rounded-xl w-36 h-20 flex items-center justify-center text-lg">
-          Find Match
+        <button className="rounded-xl w-36 h-20 bg-gray-200 flex items-center justify-center text-lg">
+          find match
+        </button>
+        <button className="rounded-xl w-20 h-20 bg-gray-200 flex items-center justify-center text-xs text-center flex-col">
+          <div>create</div>
+          <div>match</div>
         </button>
       </div>
     </>
