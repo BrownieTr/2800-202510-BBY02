@@ -7,7 +7,7 @@ import Button from "../components/ui/button";
 
 export default function Landing() {
   const menuItems = [
-    { label: "Home", to: "/" },
+    { label: "Home", to: "/home" },
     { label: "About", to: "/about" },
     { label: "Location Services", to: "/location" },
     { label: "Events", to: "/events" },
@@ -22,10 +22,10 @@ export default function Landing() {
   return (
     <div>
       <header>
-        <div>
+        <div className="relative">
           <Navbar
             header="PlayPal"
-            iconRight={
+            iconRight2={
               <Button
                 children={
                   <svg

@@ -6,7 +6,7 @@ export default function menu({ items }) {
     return null;
   }
   return (
-    <div>
+    <div className="absolute top-full left-0 right-0 z-50 bg-white shadow-md">
       {items.map((item, index) => (
         <MenuItem key={index} label={item.label} onClick={item.onClick} to={item.to} />
       ))}
