@@ -55,6 +55,7 @@ export default function Landing() {
           <button>Get Started</button>
         </section>
         <Features />
+        <LoginButton />
       </main>
       <Footer brandName="PlayPal" />
     </div>
