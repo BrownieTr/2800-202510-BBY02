@@ -10,15 +10,13 @@ export default function eventCard({
 }) {
   return (
     <>
-      <div className="border rounded-2xl">
-        <div className="grid grid-cols-3 items-center px-2 py-2">
-          <div className="flex justify-center">
+      <div className="border-2 rounded-md">
+        <div className="m-2 flex justify-between items-center">
+          <div className="flex gap-2 items-center">
             <ProfileIcon profilePic={profilePic} />
+            <p>{eventName}</p>
           </div>
-          <div className="flex justify-center">
-            <h3>{eventName}</h3>
-          </div>
-          <div className="flex justify-center">
+          <div>
             <ClickableIcons
               icon={
                 <svg
@@ -34,12 +32,11 @@ export default function eventCard({
             />
           </div>
         </div>
-        <div>{eventDesc}</div>
-        <div className="grid grid-cols-3 items-center px-2 mb-2">
-          <div className="flex justify-center">
-            <ClickableIcons icon={<h4>Join</h4>} />
-          </div>
-          <div className="flex justify-center">
+        <div className="m-2">{eventDesc}test</div>
+        <div className="m-2 flex gap-2 items-center justify-between">
+          <p>{friends}list of frinds</p>
+          <div className="flex gap-1">
+            <ClickableIcons icon={<p>Join</p>} />
             <ClickableIcons
               icon={
                 <svg
@@ -53,8 +50,6 @@ export default function eventCard({
                 </svg>
               }
             />
-          </div>
-          <div className="flex justify-center">
             <ClickableIcons
               icon={
                 <svg
@@ -70,7 +65,6 @@ export default function eventCard({
             />
           </div>
         </div>
-        <div></div>
       </div>
     </>
   );

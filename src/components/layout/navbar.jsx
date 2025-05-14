@@ -17,7 +17,7 @@ export default function Navbar({
         <ClickableIcons icon={iconLeft} to={iconLeftTo} />
       </div>
       <div className="flex-1 text-left">
-        <h2 className="font-bold">{header}</h2>
+        <p className="font-bold text-2xl">{header}</p>
       </div>
       <div className="w-10 text-right">
         <ClickableIcons icon={iconRight} to={iconRightTo} />
