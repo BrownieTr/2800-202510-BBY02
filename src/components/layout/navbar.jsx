@@ -12,7 +12,7 @@ export default function Navbar({
   iconRight2To,
 }) {
   return (
-    <nav className="flex items-center justify-between ">
+    <nav className="flex items-center justify-between py-4">
       <div>
         <ClickableIcons icon={iconLeft} to={iconLeftTo} />
       </div>
@@ -22,7 +22,7 @@ export default function Navbar({
       <div className="w-10 text-right">
         <ClickableIcons icon={iconRight} to={iconRightTo} />
       </div>
-      <div className="w-10 text-right">
+      <div className="text-right">
         <ClickableIcons icon={iconRight2} to={iconRight2To} />
       </div>
     </nav>

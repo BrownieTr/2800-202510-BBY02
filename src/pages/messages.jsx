@@ -32,7 +32,10 @@ export default function messages() {
         }
         header="username"
       />
-      <MessageCard profilePic={"https://www.dummyimage.com/50x50/000/fff"} />
+      <div className="flex flex-col items-center h-screen mt-5 gap-1">
+        <MessageCard profilePic={"https://www.dummyimage.com/50x50/000/fff"} />
+        <MessageCard profilePic={"https://www.dummyimage.com/50x50/000/fff"} />
+      </div>
     </>
   );
 }
