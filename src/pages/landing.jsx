@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from '../components/layout/navbar';
 import Features from '../sections/features';
 import Footer from '../components/layout/footer';
+import LoginButton from '../components/ui/LoginButton';
 
 export default function Landing() {
     return (
@@ -19,6 +20,7 @@ export default function Landing() {
                     <button>Get Started</button>
                 </section>
                 <Features />
+                <LoginButton />
             </main>
             <Footer brandName='PlayPal'/>
         </div>

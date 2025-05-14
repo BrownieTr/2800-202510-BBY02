@@ -16,6 +16,9 @@ const MongoStore = require('connect-mongo');
 const PORT = process.env.PORT || 3000;
 const mongoSecret = process.env.MONGO_SECRET || '123ase45'
 const nodeSecret = process.env.NODE_SECRET || 'aosijf1safd'
+// Auth0
+const { auth } = require('express-oauth2-jwt-bearer');
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
@@ -40,6 +43,14 @@ app.use(session({
   resave: true
 }
 ));
+
+const jwtCheck = auth({
+  audience: 'https://api.playpal.com',
+  issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
+  tokenSigningAlg: 'RS256'
+});
+
+app.use(jwtCheck);
 
 app.get('/users', async (req, res) => {
   let db = connect.db();
