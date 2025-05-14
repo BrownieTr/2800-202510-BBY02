@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import './styles/App.css';
@@ -7,6 +8,8 @@ import Location from './services/locationService';
 import Event from './pages/events';
 import Chat from './pages/chat';
 import ProtectedRoute from './services/protectedRoutes';
+import Messages from "./pages/messages";
+import Index from "./pages/index";
 
 function App() {
   const { isLoading } = useAuth0();
