@@ -19,24 +19,28 @@ export default function events() {
         }
         iconLeftTo={"/home"}
         header="PlayPal"
-        iconRight={
+        iconRight2={
           <svg
             xmlns="http://www.w3.org/2000/svg"
             height="24px"
             viewBox="0 -960 960 960"
             width="24px"
             fill="#000000"
+            className="ml-auto"
           >
             <path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
           </svg>
         }
-        iconRightTo={"/messages"}
+        iconRight2To={"/messages"}
       />
+      <div className="mt-20 flex flex-col gap-4">
+
       <EventCard/>
       <EventCard/>
       <EventCard/>
       <EventCard/>
       <EventCard/>
+      </div>
     </>
   );
 }
