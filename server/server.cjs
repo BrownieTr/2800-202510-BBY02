@@ -7,7 +7,7 @@
  */
 require('dotenv').config({path: "./config.env"});
 const connect = require('./databaseConnection.cjs')
-import { calculateDistance } from '../src/services/locationService';
+const { calculateDistance } = require('../src/services/locationService.jsx')
 const express = require('express');
 const session = require('express-session')
 const cors = require('cors');
@@ -57,6 +57,7 @@ app.get('/users', async (req, res) => {
   let data = await db.collection('users').find({}).toArray();
   res.send(data);
 });
+
 
 // Functionality in test, will continue when authentication is implemented
 app.get('/profile', async (req, res) => {
@@ -289,10 +290,31 @@ app.get('/api/matchmaking/match/:matchId', async (req, res) => {
   }
 });
 
-app.get('*', (req,res) => {
-  res.status(404);
-  res.send("Requested route does not exist");
-});
+
+//Gets all the messages from the chat of chatID
+app.get('/api/chat/chatMessages/:chatID', async (req,res) => {
+
+})
+
+//Starts a new chat between 2 users
+app.post('/api/chat/newChat/:userID1/:userID2', async (req,res) => {
+
+})
+
+// List all of the chats that a user has
+app.get('/api/chat/allChats/:userID', async (req,res) => {
+
+})
+
+//Send a message to the chat. 
+app.post('/api/chat/sendMessage/:userID/:chatID', async (req,res) => {
+
+})
+
+// app.get('*', (req,res) => {
+//   res.status(404);
+//   res.send("Requested route does not exist");
+// });
 
 app.listen(PORT, () => {
   connect.connect();
