@@ -1,8 +1,8 @@
 import React from "react";
 import ClickableIcons from "../components/ui/clickableIcons";
-import ProfileIcon from "../components/ui/profileIcon";
 import ChatBubble from "../components/ui/chatBubble";
 import Navbar from "../components/layout/navbar";
+import BackButton from "../components/ui/backButton";
 
 export default function chat({ recipient = "recipient" }) {
   return (
@@ -10,18 +10,7 @@ export default function chat({ recipient = "recipient" }) {
       <nav className="sticky top-0 z-50 border-b bg-white">
         <Navbar
           className="sticky top-0 z-50"
-          iconLeft={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="24px"
-              viewBox="0 -960 960 960"
-              width="24px"
-              fill="#000000"
-            >
-              <path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z" />
-            </svg>
-          }
-          iconLeftTo={"/messages"}
+          iconLeft={<BackButton />}
           header={recipient}
           iconRight2={
             <svg
@@ -71,10 +60,10 @@ export default function chat({ recipient = "recipient" }) {
           />
         </div>
         <div className="flex-1 mx-2">
-          <input 
-            type="text" 
-            placeholder="Message..." 
-            className="w-full focus:outline-none" 
+          <input
+            type="text"
+            placeholder="Message..."
+            className="w-full focus:outline-none"
           />
         </div>
         <div className="text-right">
