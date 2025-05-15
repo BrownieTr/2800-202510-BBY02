@@ -43,14 +43,18 @@ export default function Index({ username = "username" }) {
           to="/events"
           component={
             <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
-              events
+              Events
             </button>
           }
         />
-        <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg flex-col">
-          <div>sports</div>
-          <div>betting</div>
-        </button>
+        <Link
+          to="/sportsBetting"
+          component={
+            <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
+              Sports Betting
+            </button>
+          }
+        />
       </div>
 
       <div className="mt-50 flex items-center justify-center space-x-4">
@@ -59,7 +63,7 @@ export default function Index({ username = "username" }) {
           <div>settings</div>
         </button>
         <div className="rounded-xl w-36 h-20 bg-gray-200 flex items-center justify-center text-lg">
-          <ClickableIcons icon={"Find Match"} to={"/findingMatch"}/>
+          <ClickableIcons icon={"Find Match"} to={"/findingMatch"} />
         </div>
         <button className="rounded-xl w-20 h-20 bg-gray-200 flex items-center justify-center text-xs text-center flex-col">
           <div>create</div>
