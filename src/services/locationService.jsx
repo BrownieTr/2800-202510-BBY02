@@ -36,9 +36,18 @@ import { useState } from 'react'
  * Uses IPInfo instead of navigator.geolocation since this is a lot faster. 
  */
 export async function currentLocation() {
+  //gets the location from ipinfo
   const request = await fetch("https://ipinfo.io/json?token=7ea3e31d9b35e6")
+  //turns the data into a JSON object
   const jsonResponse = await request.json()
-  return jsonResponse.loc
+
+  //Since jsonResponse.loc outputs a string, split it into 
+  const location = jsonResponse.loc.split(",");
+  const locationNum = []
+  locationNum[0] = parseFloat(location[0])
+  locationNum[1] = parseFloat(location[1])
+
+  return locationNum
 }
 
 

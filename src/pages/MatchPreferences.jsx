@@ -4,6 +4,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import Navbar from "../components/layout/navbar";
 import Button from "../components/ui/button";
 import { saveMatchPreferences } from "../services/matchMaking";
+import { currentLocation } from "../services/locationService.jsx"
 
 export default function MatchPreferences() {
   const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
@@ -32,12 +33,14 @@ export default function MatchPreferences() {
   // Handle form submission
 const handleSubmit = async (e) => {
   e.preventDefault();
-  
+  const [latitude, longitude] = await currentLocation()
   setIsLoading(true);
   try {
     const success = await saveMatchPreferences(
       preferences.sport,
       parseInt(preferences.distance),
+      latitude,
+      longitude,
       preferences.skillLevel,
       preferences.mode,
       preferences.matchType,
