@@ -1,6 +1,7 @@
 import React from "react";
 import Navbar from "../components/layout/navbar";
 import Link from "../components/ui/link";
+import ClickableIcons from "../components/ui/clickableIcons";
 
 export default function Index({ username = "username" }) {
   return (
@@ -26,6 +27,7 @@ export default function Index({ username = "username" }) {
             viewBox="0 -960 960 960"
             width="24px"
             fill="#000000"
+            className="ml-auto"
           >
             <path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
           </svg>
@@ -35,27 +37,34 @@ export default function Index({ username = "username" }) {
       <h1 className="mt-30 text-2xl font-bold text-center">
         Welcome {username}
       </h1>
-      
+
       <div className="mt-40 flex items-center justify-between space-x-4">
-        <Link to="/events" component={
-          <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
-            events
-          </button>
-        }/>
-        <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg flex-col">
-          <div>sports</div>
-          <div>betting</div>
-        </button>
+        <Link
+          to="/events"
+          component={
+            <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
+              Events
+            </button>
+          }
+        />
+        <Link
+          to="/sportsBetting"
+          component={
+            <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
+              Sports Betting
+            </button>
+          }
+        />
       </div>
-      
+
       <div className="mt-50 flex items-center justify-center space-x-4">
         <button className="rounded-xl w-20 h-20 bg-gray-200 flex items-center justify-center text-xs text-center flex-col">
           <div>match</div>
           <div>settings</div>
         </button>
-        <button className="rounded-xl w-36 h-20 bg-gray-200 flex items-center justify-center text-lg">
-          find match
-        </button>
+        <div className="rounded-xl w-36 h-20 bg-gray-200 flex items-center justify-center text-lg">
+          <ClickableIcons icon={"Find Match"} to={"/MatchPreferences"} />
+        </div>
         <button className="rounded-xl w-20 h-20 bg-gray-200 flex items-center justify-center text-xs text-center flex-col">
           <div>create</div>
           <div>match</div>

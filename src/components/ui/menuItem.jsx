@@ -1,14 +1,17 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "./link";
 
 export default function menuItem({ label = "label", onClick, to }) {
   if (to) {
     return (
-      <Link to={to} className="no-underline visited:text-inherit">
-        <div className="flex items-center justify-between px-6 py-2 cursor-pointer">
-          <span className="text-white text-base">{label}</span>
-        </div>
-      </Link>
+      <Link
+        to={to}
+        component={
+          <div className="flex items-center justify-between px-6 py-2 cursor-pointer">
+            <span className="text-base">{label}</span>
+          </div>
+        }
+      ></Link>
     );
   }
 
