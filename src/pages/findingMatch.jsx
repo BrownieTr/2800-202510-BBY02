@@ -1,27 +1,135 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import Navbar from "../components/layout/navbar";
-import ClickableIcons from "../components/ui/clickableIcons";
+import { startLookingForMatch, cancelMatchmaking } from "../services/matchMaking";
 
-export default function findingMatch({
-  sport = "sport",
-  matchSetting = "sportsSettings",
-}) {
+export default function FindingMatch() {
+  const location = useLocation();
+  // Get preferences from location state or use defaults
+  const { 
+    sport = "Sport", 
+    distance = 5, 
+    skillLevel = "Beginner", 
+    mode = "Casual", 
+    matchType = "1v1" 
+  } = location.state || {};
+
+  const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
+  const navigate = useNavigate();
+  const [searching, setSearching] = useState(true);
+  const [matchSearchControl, setMatchSearchControl] = useState(null);
+  const [searchTime, setSearchTime] = useState(0);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      loginWithRedirect();
+    }
+  }, [isAuthenticated, loginWithRedirect]);
+
+  // Start looking for a match when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      const controller = startLookingForMatch(
+        getAccessTokenSilently,
+        (matchData) => {
+          // When a match is found
+          console.log("Match found!", matchData);
+          // Save match data to use in the next screen
+          localStorage.setItem("matchData", JSON.stringify(matchData));
+          // Navigate to the match screen
+          navigate("/match");
+        }
+      );
+
+      setMatchSearchControl(controller);
+
+      // Start a timer to show how long the search has been going
+      const timer = setInterval(() => {
+        setSearchTime((prevTime) => prevTime + 1);
+      }, 1000);
+
+      // Clean up when component unmounts
+      return () => {
+        if (controller) {
+          controller.cancelSearch();
+        }
+        clearInterval(timer);
+      };
+    }
+  }, [isAuthenticated, getAccessTokenSilently, navigate]);
+
+  // Format the search time as mm:ss
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Handle canceling the search
+  const handleCancel = async () => {
+    setSearching(false);
+    
+    if (matchSearchControl) {
+      matchSearchControl.cancelSearch();
+    }
+    
+    try {
+      await cancelMatchmaking(getAccessTokenSilently);
+      navigate("/home");
+    } catch (error) {
+      console.error("Error canceling matchmaking:", error);
+      navigate("/home");
+    }
+  };
+
   return (
     <>
       <Navbar header="PlayPal" />
-      <h1 className="font-bold text-4xl mt-20">Finding a Match...</h1>
-      <div className="mt-10">
-        <img
-          src="https://www.dummyimage.com/600x400/000/fff"
-          alt="Picture of sport"
-        ></img>
-      </div>
-      <div className="mt-20">
-        <p>{matchSetting}</p>
-      </div>
-      <div className="items-center justify-center flex mt-40">
-        <div className="rounded-xl w-36 h-20 bg-gray-200 flex items-center justify-center text-lg ">
-          <ClickableIcons icon={"Cancel"} to={"/home"} />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="font-bold text-4xl mt-10 text-center">Finding a Match...</h1>
+        
+        {/* Search time display */}
+        <div className="mt-4 text-center text-2xl">
+          {formatTime(searchTime)}
+        </div>
+        
+        {/* Match preferences */}
+        <div className="mt-10 bg-gray-100 p-6 rounded-lg shadow-md mx-auto max-w-md">
+          <h2 className="font-bold text-xl mb-4">Match Preferences</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="font-semibold">Sport:</p>
+              <p>{sport}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Distance:</p>
+              <p>{distance} km</p>
+            </div>
+            <div>
+              <p className="font-semibold">Skill Level:</p>
+              <p>{skillLevel}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Mode:</p>
+              <p>{mode}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Match Type:</p>
+              <p>{matchType}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Cancel button */}
+        <div className="flex justify-center mt-10">
+          <button 
+            onClick={handleCancel}
+            className="rounded-xl w-36 h-20 bg-red-500 text-white font-bold text-lg hover:bg-red-600 transition"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </>

@@ -63,7 +63,7 @@ export default function Index({ username = "username" }) {
           <div>settings</div>
         </button>
         <div className="rounded-xl w-36 h-20 bg-gray-200 flex items-center justify-center text-lg">
-          <ClickableIcons icon={"Find Match"} to={"/findingMatch"} />
+          <ClickableIcons icon={"Find Match"} to={"/MatchPreferences"} />
         </div>
         <button className="rounded-xl w-20 h-20 bg-gray-200 flex items-center justify-center text-xs text-center flex-col">
           <div>create</div>

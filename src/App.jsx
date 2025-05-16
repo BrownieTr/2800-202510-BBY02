@@ -10,6 +10,8 @@ import Chat from './pages/chat';
 import ProtectedRoute from './services/protectedRoutes';
 import Messages from "./pages/messages";
 import Index from "./pages/index";
+import MatchPreferences from "./pages/MatchPreferences";
+import FindingMatch from "./pages/findingMatch";
 
 function App() {
   const { isLoading } = useAuth0();
@@ -22,7 +24,7 @@ function App() {
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Landing />} />
-      
+
       {/* Protected routes - require authentication */}
       <Route path="/profile" element={
         <ProtectedRoute>
@@ -54,7 +56,18 @@ function App() {
           <Index />
         </ProtectedRoute>
       } />
+      <Route path="/MatchPreferences" element={
+        <ProtectedRoute>
+          <MatchPreferences />
+        </ProtectedRoute>
+      } />
+      <Route path="/finding-match" element={
+        <ProtectedRoute>
+          <FindingMatch />
+        </ProtectedRoute>
+      } />
     </Routes>
+
   );
 }
 
