@@ -12,6 +12,7 @@ import Messages from "./pages/messages";
 import Index from "./pages/index";
 import MatchPreferences from "./pages/MatchPreferences";
 import FindingMatch from "./pages/findingMatch";
+import CreateEvent from "./pages/createEvent";
 
 function App() {
   const { isLoading } = useAuth0();
@@ -39,6 +40,11 @@ function App() {
       <Route path="/events" element={
         <ProtectedRoute>
           <Event />
+        </ProtectedRoute>
+      } />
+      <Route path="/createEvent" element={
+        <ProtectedRoute>
+          <CreateEvent />
         </ProtectedRoute>
       } />
       <Route path="/chat" element={
