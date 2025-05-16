@@ -11,21 +11,22 @@ export default function Profile_Details({onButtonClick}) {
         { id: 5, title: "Sport Preference", detail: "..." }
       ]);
 
-      // Functionality under testing
-      useEffect(() => {
-        fetch('http://localhost:3000/profile')
-          .then(res => res.json())
-          .then(data => {
-            const updatedDetails = details.map(item => {
-              const value = data[0][item.title.toLowerCase()];
-              return {
-                ...item,
-                detail: value || item.detail,
-              };
-            });
-            setDetails(updatedDetails);
+    // Functionality under testing
+    useEffect(() => {
+      fetch('http://localhost:3000/profile')
+        .then(res => res.json())
+        console.log(res)
+        .then(data => {
+          const updatedDetails = details.map(item => {
+            const value = data[0][item.title.toLowerCase()];
+            return {
+              ...item,
+              detail: value || item.detail,
+            };
           });
-      }, []);
+          setDetails(updatedDetails);
+        });
+    }, []);
 
     const handleButtonClick = (id) => { 
         onButtonClick(id);
