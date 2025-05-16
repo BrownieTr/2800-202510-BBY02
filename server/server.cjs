@@ -1,10 +1,3 @@
-/**
- * I based this file on the code from MERN Tutorial: Ep 3 - Setting Up Express on youtube
- * @author Austin Davis
- * @see https://www.youtube.com/watch?v=lWM_8Zq9tUc&t=305s
- * 
- * As well as 
- */
 require('dotenv').config({ path: "../config.env" });
 const connect = require('./databaseConnection.cjs')
 const { calculateDistance } = require('../src/services/locationService.jsx')
@@ -12,9 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Auth0
 const { auth } = require('express-oauth2-jwt-bearer');
+const { MongoClient, ObjectId } = require('mongodb');
 
 app.use(cors());
 app.use(express.json());
@@ -340,6 +332,111 @@ app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
     res.json({ match: match });
   } catch (error) {
     console.error('Error getting match details:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+//Event Routes
+// Get all events
+app.get('/api/events', jwtCheck, async (req, res) => {
+  try {
+    const db = connect.db();
+    
+    // Fetch all events from the database
+    const events = await db.collection('events').find({}).toArray();
+    
+    res.json({ events });
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create a new event
+app.post('/api/events/create', jwtCheck, async (req, res) => {
+  try {
+    const userId = req.auth.payload.sub; // Get Auth0 user ID
+    
+    // Get event data from request body
+    const { name, description, date, time, location } = req.body;
+    
+    // Validate required fields
+    if (!name || !date || !location) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    const db = connect.db();
+    
+    // Create the event object
+    const event = {
+      creatorId: userId,
+      name,
+      description,
+      date,
+      time,
+      location,
+      participants: [userId], // Creator is automatically a participant
+      createdAt: new Date()
+    };
+    
+    // Save to database
+    const result = await db.collection('events').insertOne(event);
+    
+    // Return the created event with its ID
+    res.status(201).json({
+      success: true,
+      event: {
+        ...event,
+        _id: result.insertedId
+      }
+    });
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get event details
+app.get('/api/events/:eventId', jwtCheck, async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+    const db = connect.db();
+    
+    // Find the event by ID
+    const event = await db.collection('events').findOne({ _id: new ObjectId(eventId) });
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    
+    res.json({ event });
+  } catch (error) {
+    console.error('Error fetching event details:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Join an event
+app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+    const userId = req.auth.payload.sub;
+    
+    const db = connect.db();
+    
+    // Update the event to add the user to participants if not already there
+    const result = await db.collection('events').updateOne(
+      { _id: new ObjectId(eventId) },
+      { $addToSet: { participants: userId } }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error joining event:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
