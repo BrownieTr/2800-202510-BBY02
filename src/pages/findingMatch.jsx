@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import Navbar from "../components/layout/navbar";
 import { startLookingForMatch, cancelMatchmaking } from "../services/matchMaking";
+import { getLoadingQuote } from "../services/ai"
 
 export default function FindingMatch() {
   const location = useLocation();
@@ -20,6 +21,7 @@ export default function FindingMatch() {
   const [searching, setSearching] = useState(true);
   const [matchSearchControl, setMatchSearchControl] = useState(null);
   const [searchTime, setSearchTime] = useState(0);
+  const [quote, setQuote] = useState("Focus on consistency over perfection—small, steady improvements lead to long-term success in any sport.")
 
   // Check if user is authenticated
   useEffect(() => {
@@ -50,12 +52,21 @@ export default function FindingMatch() {
         setSearchTime((prevTime) => prevTime + 1);
       }, 1000);
 
+      const quoter = setInterval(async () => {
+        try {
+          setQuote(await getLoadingQuote(sport, 'tip'))
+        } catch {
+
+        }
+      }, 10000)
+
       // Clean up when component unmounts
       return () => {
         if (controller) {
           controller.cancelSearch();
         }
         clearInterval(timer);
+        clearInterval(quoter);
       };
     }
   }, [isAuthenticated, getAccessTokenSilently, navigate]);
@@ -119,6 +130,10 @@ export default function FindingMatch() {
               <p className="font-semibold">Match Type:</p>
               <p>{matchType}</p>
             </div>
+          </div>
+          <div>
+            <p className='font-semibold'>Loading Quote:</p>
+            <p>{quote}</p>
           </div>
         </div>
         
