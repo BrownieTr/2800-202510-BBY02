@@ -2,6 +2,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import './styles/App.css';
+import './styles/profile.css';
 import Landing from './pages/landing';
 import Profile from './pages/profile';
 // import Location from './services/locationService';  
