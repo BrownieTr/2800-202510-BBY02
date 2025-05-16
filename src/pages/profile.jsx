@@ -10,7 +10,31 @@ export default function Profile() {
     const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
     const [userData, setUserData] = useState(null);
     const [view, setView] = useState("profile");
+    const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+    });
     
+    useEffect(() => {
+        localStorage.setItem('darkMode', darkMode);
+    }, [darkMode]);
+    
+    useEffect(() => {
+        const className = 'dark-mode';
+        const element = document.documentElement; // or document.body
+
+        if (darkMode) {
+            element.classList.add(className);
+        } else {
+            element.classList.remove(className);
+        }
+
+        // Optional cleanup if your component unmounts:
+        return () => {
+            element.classList.remove(className);
+        };
+    }, [darkMode]);
+
+
     // Fetch user data when component loads
     useEffect(() => {
         const fetchUserData = async () => {
@@ -43,7 +67,10 @@ export default function Profile() {
     }, [isAuthenticated, getAccessTokenSilently]);
     
     const handleOptionClick = (whichOptionClicked) => {
-        if (whichOptionClicked === 2) {
+        if (whichOptionClicked === 1) {
+            // Dark mode toggle
+            setDarkMode(prev => !prev);
+        } else if (whichOptionClicked === 2) {
             setView("details");
         } else if (whichOptionClicked === 3) {
             setView("settings");
@@ -51,6 +78,7 @@ export default function Profile() {
             setView("profile");
         }
     };
+
     
     const handleProfileUpdate = (updatedData) => {
         setUserData(prevData => ({
@@ -68,7 +96,7 @@ export default function Profile() {
     const displayName = userData?.name || (user ? (user.name || user.nickname) : "Your Profile");
 
     return (
-        <div>
+        <div className={darkMode ? 'dark-mode' : ''}>
             <header>
                 <nav className='profile-nav'>
                     <Link to="/">

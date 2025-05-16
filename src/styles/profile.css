@@ -88,3 +88,41 @@ a {
     width: 100%;
     height: 100%;
 }
+
+/* Light mode styles (default) */
+body,
+main, 
+.profile-nav, 
+.profile, 
+.option-grid, 
+.option-card {
+  background-color: white;
+  color: black;
+}
+
+/* Dark mode styles */
+.dark-mode body,
+.dark-mode main,
+.dark-mode .profile-nav {
+  background-color: #121212; /* dark background for nav and main */
+  color: #e0e0e0; /* lighter text */
+}
+
+.dark-mode .profile {
+  background-color: #1e1e1e;
+  color: #ddd;
+}
+
+.dark-mode .option-grid {
+  background-color: #222;
+}
+
+.dark-mode .option-card {
+  background-color: #333;
+  color: #ddd;
+  border: 1px solid #555; /* subtle border */
+}
+
+.dark-mode a {
+  color: #aad8ff; /* link color in dark mode */
+}
