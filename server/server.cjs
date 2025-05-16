@@ -5,17 +5,14 @@
  * 
  * As well as 
  */
-require('dotenv').config({path: "./config.env"});
+require('dotenv').config({path: "../config.env"});
 const connect = require('./databaseConnection.cjs')
 const { calculateDistance } = require('../src/services/locationService.jsx')
 const express = require('express');
-const session = require('express-session')
 const cors = require('cors');
 const app = express();
-const MongoStore = require('connect-mongo');
 const PORT = process.env.PORT || 3000;
-const mongoSecret = process.env.MONGO_SECRET || '123ase45'
-const nodeSecret = process.env.NODE_SECRET || 'aosijf1safd'
+
 // Auth0
 const { auth } = require('express-oauth2-jwt-bearer');
 
@@ -23,26 +20,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(express.static(__dirname + "/public"));
-
-
-/**
- * Session handling is from 2537 example code
- * @author Patrick Guichon
- */
-var mongoStore = MongoStore.create({
-  mongoUrl: process.env.ATLAS_URI,
-  crypto: {
-    secret: mongoSecret
-  }
-})
-
-app.use(session({ 
-    secret: nodeSecret,
-  store: mongoStore, //default is memory store 
-  saveUninitialized: false, 
-  resave: true
-}
-));
 
 const jwtCheck = auth({
   audience: 'https://api.playpal.com',
@@ -58,30 +35,103 @@ app.get('/users', async (req, res) => {
   res.send(data);
 });
 
+app.get('/api/profile', jwtCheck, async (req, res) => {
+  try {
+    // Log the entire auth object
+    console.log("Full Auth0 token payload:", req.auth);
+    
+    // Access sub from within the payload object
+    const auth0Id = req.auth.payload?.sub;
+    console.log("Auth0 ID extracted:", auth0Id);
+    
+    if (!auth0Id) {
+      console.error("Could not find Auth0 ID in token!");
+      console.log("Available fields in req.auth:", Object.keys(req.auth));
+      console.log("Available fields in payload:", req.auth.payload ? Object.keys(req.auth.payload) : "No payload");
+      return res.status(400).json({ error: 'Auth0 ID not found in token' });
+    }
+    
+    let db = connect.db();
+    
+    // Find user by Auth0 ID
+    let user = await db.collection('users').findOne({ auth0Id: auth0Id });
+    console.log("User found in DB:", user ? "Yes" : "No");
+    
+    // If user doesn't exist, create a new one
+    if (!user) {
+      console.log("Creating new user for Auth0 ID:", auth0Id);
+      
+      // Get user info from Auth0 userinfo endpoint
+      // Since we don't have user details in the token, we'll use a default name for now
+      // and update it later if needed
+      
+      user = {
+        auth0Id: auth0Id,
+        name: "New User",  // Default name
+        email: "No email available",
+        address: "Not set",
+        country: "Not set",
+        preferences: "Not set",
+        createdAt: new Date()
+      };
+      
+      console.log("About to insert user:", user);
+      
+      // Save to database
+      const result = await db.collection('users').insertOne(user);
+      console.log("Insert result:", result);
+    } else {
+      console.log("Found existing user with ID:", auth0Id);
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+});
 
-// Functionality in test, will continue when authentication is implemented
-app.get('/profile', async (req, res) => {
-  let db = connect.db();
-  if (req.session.authenticated) {
-    let data = await db.collection('users').find({email: email})
-                .project({name: 1 , email: 1, address: 1, country: 1, preferences: 1}).toArray();
-    res.send(data);
-  } else {
-    res.redirect("/")
+// Example: Update profile
+app.post('/api/profile/update', jwtCheck, async (req, res) => {
+  try {
+    // Get Auth0 ID from token
+    const auth0Id = req.auth.payload.sub;
+    
+    // Get data from request
+    const { name, address, country, preferences } = req.body;
+    
+    let db = connect.db();
+    
+    // Update user by Auth0 ID
+    const result = await db.collection('users').updateOne(
+      { auth0Id: auth0Id },
+      { 
+        $set: { 
+          name, address, country, preferences,
+          updatedAt: new Date()
+        } 
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Get updated user
+    const updatedUser = await db.collection('users').findOne({ auth0Id: auth0Id });
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
 // Matchmaking Routes
 
 // Save match preferences
-app.post('/api/matchmaking/save-preferences', async (req, res) => {
-  // Make sure user is logged in
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Not logged in' });
-  }
-  
+app.post('/api/matchmaking/save-preferences', jwtCheck, async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.auth.sub; // Get Auth0 user ID
     const { sport, distance, latitude, longitude, skillLevel, mode, matchType } = req.body;
     
     // Connect to database
@@ -113,13 +163,9 @@ app.post('/api/matchmaking/save-preferences', async (req, res) => {
 });
 
 // Check for a match
-app.get('/api/matchmaking/check-for-match', async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Not logged in' });
-  }
-  
+app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.auth.sub; // Get Auth0 user ID
     const db = connect.db();
     
     // Get the user's preferences
@@ -153,11 +199,6 @@ app.get('/api/matchmaking/check-for-match', async (req, res) => {
       return res.json({ matchFound: false });
     }
     
-    // Get user details
-    // const user1 = await db.collection('users').findOne({ _id: userId });
-    // const user2 = await db.collection('users').findOne({ _id: potentialMatch.userId });
-
-    //Not sure why the abovecode is calling the database again, but if there is a reason, it's left up there. 
     const user1 = myPreferences;
     const user2 = potentialMatch;
 
@@ -198,12 +239,9 @@ app.get('/api/matchmaking/check-for-match', async (req, res) => {
 });
 
 // Create a match
-app.post('/api/matchmaking/create-match', async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Not logged in' });
-  }
-  
+app.post('/api/matchmaking/create-match', jwtCheck, async (req, res) => {
   try {
+    const userId = req.auth.sub; // Get Auth0 user ID
     const matchData = req.body;
     const db = connect.db();
     
@@ -223,13 +261,9 @@ app.post('/api/matchmaking/create-match', async (req, res) => {
 });
 
 // Leave matchmaking queue
-app.post('/api/matchmaking/leave-queue', async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Not logged in' });
-  }
-  
+app.post('/api/matchmaking/leave-queue', jwtCheck, async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.auth.sub; // Get Auth0 user ID
     const db = connect.db();
     
     // Remove from matchmaking queue
@@ -243,13 +277,9 @@ app.post('/api/matchmaking/leave-queue', async (req, res) => {
 });
 
 // Get a user's matches
-app.get('/api/matchmaking/user-matches', async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Not logged in' });
-  }
-  
+app.get('/api/matchmaking/user-matches', jwtCheck, async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.auth.sub; // Get Auth0 user ID
     const db = connect.db();
     
     // Find matches where user is player1 or player2
@@ -268,11 +298,7 @@ app.get('/api/matchmaking/user-matches', async (req, res) => {
 });
 
 // Get specific match details
-app.get('/api/matchmaking/match/:matchId', async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Not logged in' });
-  }
-  
+app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
   try {
     const matchId = req.params.matchId;
     const db = connect.db();
@@ -290,33 +316,32 @@ app.get('/api/matchmaking/match/:matchId', async (req, res) => {
   }
 });
 
-
 //Gets all the messages from the chat of chatID
-app.get('/api/chat/chatMessages/:chatID', async (req,res) => {
-
-})
+app.get('/api/chat/chatMessages/:chatID', jwtCheck, async (req,res) => {
+  // Implementation needed
+});
 
 //Starts a new chat between 2 users
-app.post('/api/chat/newChat/:userID1/:userID2', async (req,res) => {
-
-})
+app.post('/api/chat/newChat/:userID1/:userID2', jwtCheck, async (req,res) => {
+  // Implementation needed
+});
 
 // List all of the chats that a user has
-app.get('/api/chat/allChats/:userID', async (req,res) => {
-
-})
+app.get('/api/chat/allChats/:userID', jwtCheck, async (req,res) => {
+  // Implementation needed
+});
 
 //Send a message to the chat. 
-app.post('/api/chat/sendMessage/:userID/:chatID', async (req,res) => {
+app.post('/api/chat/sendMessage/:userID/:chatID', jwtCheck, async (req,res) => {
+  // Implementation needed
+});
 
-})
-
-// app.get('*', (req,res) => {
-//   res.status(404);
-//   res.send("Requested route does not exist");
-// });
-
-app.listen(PORT, () => {
-  connect.connect();
-  console.log('server is running on port ' + PORT);
+app.listen(PORT, async () => {
+  try {
+    await connect.connect();
+    console.log('Server is running on port ' + PORT + ' and connected to MongoDB');
+  } catch (err) {
+    console.error('Failed to connect to database:', err);
+    console.log('Server is running on port ' + PORT + ' but NOT connected to MongoDB');
+  }
 });
