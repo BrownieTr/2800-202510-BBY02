@@ -1,11 +1,102 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import Navbar from "../components/layout/navbar";
 import EventCard from "../components/ui/eventCard";
 import Footer from "../components/layout/stickyFooter";
 import ClickableIcons from "../components/ui/clickableIcons";
 import BackButton from "../components/ui/backButton";
 
-export default function events() {
+export default function Events() {
+  const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
+  const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      loginWithRedirect();
+    }
+  }, [isAuthenticated, isLoading, loginWithRedirect]);
+
+  // Fetch events data
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        
+        // Get Auth0 token
+        const token = await getAccessTokenSilently();
+        
+        // Fetch events from API
+        const response = await fetch('http://localhost:3000/api/events', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch events');
+        }
+        
+        const data = await response.json();
+        setEvents(data.events || []);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("Failed to load events");
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchEvents();
+    }
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+  // Handle joining an event
+  const handleJoinEvent = async (eventId) => {
+    try {
+      const token = await getAccessTokenSilently();
+      
+      const response = await fetch(`http://localhost:3000/api/events/${eventId}/join`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to join event');
+      }
+      
+      // Refresh the events list
+      const updatedEvents = await fetch('http://localhost:3000/api/events', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await updatedEvents.json();
+      setEvents(data.events || []);
+      
+      alert("You've joined the event!");
+    } catch (error) {
+      console.error("Error joining event:", error);
+      alert("Failed to join event. Please try again.");
+    }
+  };
+
+  if (isLoading || loading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center p-4">{error}</div>;
+  }
+
   return (
     <>
       <Navbar
@@ -25,15 +116,24 @@ export default function events() {
         iconRight2To={"/messages"}
       />
       <div className="mt-5 mb-5 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-160px)] p-4">
-        <EventCard />
-        <EventCard />
-        <EventCard />
-        <EventCard />
-        <EventCard />
-        <EventCard />
-        <EventCard />
-        <EventCard />
-        <EventCard />
+        {events.length > 0 ? (
+          events.map((event) => (
+            <EventCard 
+              key={event._id}
+              title={event.name}
+              description={event.description}
+              date={event.date}
+              time={event.time}
+              location={event.location}
+              participants={event.participants?.length || 0}
+              onJoin={() => handleJoinEvent(event._id)}
+            />
+          ))
+        ) : (
+          <div className="text-center p-4">
+            <p>No events found. Create a new event using the + button below!</p>
+          </div>
+        )}
       </div>
       <Footer
         iconLeft={
