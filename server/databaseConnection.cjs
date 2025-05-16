@@ -11,9 +11,13 @@ const {MongoClient} = require('mongodb');
  * 
  * with connection_string looking something like this: mongodb+srv://<username>:<password>@playpal.bv02d2k.mongodb.net/
  */
-require('dotenv').config({path: "./config.env"});
+require('dotenv').config({path: "../.env"});
 
-const client = new MongoClient(process.env.ATLAS_URI, {});
+const uri = process.env.ATLAS_URI;
+if (!uri) {
+  throw new Error("Missing ATLAS URI. Did you forget to set ATLAS_URI in .env?");
+}
+const client = new MongoClient(uri, {});
 
 let database
 
