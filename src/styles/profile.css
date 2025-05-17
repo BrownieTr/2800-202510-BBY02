@@ -79,32 +79,16 @@
     margin: 1em 1em;
 }
 
-a {
-    overflow: visible;
-    width: 4.2em;
-}
-
 #back-arrow {
     width: 100%;
     height: 100%;
-}
-
-/* Light mode styles (default) */
-body,
-main, 
-.profile-nav, 
-.profile, 
-.option-grid, 
-.option-card {
-  background-color: white;
-  color: black;
 }
 
 /* Dark mode styles */
 .dark-mode body,
 .dark-mode main,
 .dark-mode .profile-nav {
-  background-color: #121212; /* dark background for nav and main */
+  background-color: #121212; 
   color: #e0e0e0; /* lighter text */
 }
 
