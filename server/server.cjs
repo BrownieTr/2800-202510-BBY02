@@ -316,6 +316,54 @@ app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
   }
 });
 
+app.get('/api/conversations', jwtCheck, async (req, res) => {
+  try {
+    const auth0Id = req.auth.payload?.sub;
+
+    if(!auth0Id) {
+      return res.status(400).json({ error: 'Auth0 ID not found in token' });
+    }
+
+    let db = connect.db();
+    let user = await db.collection('users').findOne({ auth0Id: auth0Id });
+    
+    if(!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Find conversations where the user's ID is in the participants array
+    let conversations = await db.collection('conversations').find({
+      participants: { $in: [user._id] }
+    }).toArray();
+
+    console.log("Conversations found:", conversations);
+    
+    // Enhance the conversation data with recipient info
+    const enhancedConversations = await Promise.all(conversations.map(async (convo) => {
+      // Find the other participant ID (not the current user)
+      const otherParticipantId = convo.participants.find(
+        id => id.toString() !== user._id.toString()
+      );
+      
+      // Get recipient details
+      const recipient = await db.collection('users').findOne({ _id: otherParticipantId });
+      
+      return {
+        _id: convo._id,
+        recipientId: otherParticipantId,
+        recipientName: recipient ? recipient.name : 'Unknown User',
+        lastMessage: convo.lastMessage || "",
+        timestamp: convo.lastMessageDate || convo.createdAt || new Date()
+      };
+    }));
+    
+    res.json({ conversations: enhancedConversations });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+});
+
 //Gets all the messages from the chat of chatID
 app.get('/api/chat/chatMessages/:chatID', jwtCheck, async (req,res) => {
   // Implementation needed
