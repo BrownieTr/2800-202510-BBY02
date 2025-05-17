@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import './styles/App.css';
@@ -22,10 +23,11 @@ function App() {
   }
 
   return (
-    <Routes>
+    <DarkModeProvider>
+      <Routes>
       {/* Public routes */}
       <Route path="/" element={<Landing />} />
-      
+
       {/* Protected routes - require authentication */}
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/location" element={<ProtectedRoute><Location /></ProtectedRoute>} />

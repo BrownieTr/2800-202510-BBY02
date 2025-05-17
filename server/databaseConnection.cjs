@@ -1,8 +1,3 @@
-/**
- * Code based on MERN Tutorial: Ep 2 - MongoDB & Node Setup with Vite
- * @author Austin Davis
- * @see https://www.youtube.com/watch?v=CE1H4t8t2yY
- */
 const {MongoClient} = require('mongodb');
 
 /**
@@ -11,7 +6,8 @@ const {MongoClient} = require('mongodb');
  * 
  * with connection_string looking something like this: mongodb+srv://<username>:<password>@playpal.bv02d2k.mongodb.net/
  */
-require('dotenv').config({path: "./config.env"});
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const client = new MongoClient(process.env.ATLAS_URI, {});
 
