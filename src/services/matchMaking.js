@@ -15,10 +15,10 @@
  * @param {string} matchType - Type of match
  * @param {function} getAccessTokenSilently - Auth0 function to get token
  */
-export async function saveMatchPreferences(sport, distance, skillLevel, mode, matchType, getAccessTokenSilently) {
+export async function saveMatchPreferences(sport, distance, latitude, longitude, skillLevel, mode, matchType, getAccessTokenSilently) {
   try {
     // Add debug logs
-    console.log("Saving preferences:", { sport, distance, skillLevel, mode, matchType });
+    console.log("Saving preferences:", { sport, distance, latitude, longitude, skillLevel, mode, matchType });
     
     // Get the Auth0 token
     const token = await getAccessTokenSilently();
@@ -35,8 +35,8 @@ export async function saveMatchPreferences(sport, distance, skillLevel, mode, ma
       body: JSON.stringify({
         sport: sport,
         distance: distance,
-        latitude: 49.2827, // Default latitude for Vancouver
-        longitude: -123.1207, // Default longitude for Vancouver
+        latitude: latitude, 
+        longitude: longitude, 
         skillLevel: skillLevel,
         mode: mode,
         matchType: matchType
