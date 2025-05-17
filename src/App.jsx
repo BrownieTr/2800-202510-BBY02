@@ -1,8 +1,6 @@
-
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react';
 import './styles/App.css';
-import './styles/profile.css';
 import Landing from './pages/landing';
 import Profile from './pages/profile';
 // import Location from './services/locationService';  
@@ -14,6 +12,7 @@ import Index from "./pages/index";
 import MatchPreferences from "./pages/MatchPreferences";
 import FindingMatch from "./pages/findingMatch";
 import CreateEvent from "./pages/createEvent";
+import { DarkModeProvider } from './components/ui/DarkModeContext';
 
 function App() {
   const { isLoading } = useAuth0();
@@ -23,7 +22,8 @@ function App() {
   }
 
   return (
-    <Routes>
+    <DarkModeProvider>
+      <Routes>
       {/* Public routes */}
       <Route path="/" element={<Landing />} />
 
@@ -73,8 +73,8 @@ function App() {
           <FindingMatch />
         </ProtectedRoute>
       } />
-    </Routes>
-
+      </Routes>
+    </DarkModeProvider>
   );
 }
 
