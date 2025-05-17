@@ -1,7 +1,9 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 2rem;
   text-align: center;
 }
 
@@ -39,4 +41,115 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.icon {
+  max-width: 2em;
+  padding: 0 1em 0 1em;
+}
+
+.icon:hover {
+  transform: scale(1.25);
+}
+
+/* Shake keyframes */
+@keyframes ring {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(15deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(4deg); }
+  100% { transform: rotate(0); }
+}
+
+.bell{
+    max-width: 2em;
+    padding: 0 1em 0 1em;
+}
+
+.bell:hover {
+    animation: ring 0.6s ease;
+}
+
+.profile {
+  justify-self: center;
+  width: 12em;
+}
+
+#profile-name {
+  margin-top: 0;
+}
+
+.profile-nav {
+  display: flex;
+  justify-content: space-between;
+}
+
+.option-grid {
+    border-top: 1px solid grey;
+}
+
+.option-card {
+  display: flex;
+  border: 1px solid grey;
+}
+.option-card:hover {
+  transform: scale(1.03);
+}
+
+.profile-grid {
+    border-top: 1px solid grey;
+}
+
+.profile-card {
+    display: flex;
+    border-bottom: 1px solid grey;
+    align-items: center;
+}
+
+.detail {
+    color: gray;
+    margin-left: auto;
+    margin-right: 1em;
+}
+
+.profile-buttons {
+    margin: 1em 1em;
+}
+
+#back-arrow {
+    width: 100%;
+    height: 100%;
+}
+
+/* Dark mode styles */
+.dark-mode body,
+.dark-mode main,
+.dark-mode .profile-nav {
+  background-color: #121212; 
+  color: #e0e0e0; /* lighter text */
+}
+
+.dark-mode .profile {
+
+  color: #ddd;
+}
+
+.dark-mode .option-card {
+  background-color: #333;
+  color: #ddd;
+  border: 1px solid #555; 
+}
+
+.dark-mode .profile-card {
+  background-color: #333; 
+}
+
+.dark-mode .detail {
+  color: #ddd; 
+}
+
+.dark-mode a {
+  color: #aad8ff; /* link color in dark mode */
 }
