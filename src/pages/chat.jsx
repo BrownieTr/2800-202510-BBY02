@@ -1,17 +1,57 @@
-import React from "react";
+import React, { useState, useEffect, use } from "react";
 import ClickableIcons from "../components/ui/clickableIcons";
 import ChatBubble from "../components/ui/chatBubble";
 import Navbar from "../components/layout/navbar";
 import BackButton from "../components/ui/backButton";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useParams } from "react-router-dom";
 
-export default function chat({ recipient = "recipient" }) {
+export default function chat() {
+  const { user, isAuthenticated, isLoading, getAccessTokenSilently } =
+    useAuth0();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const { conversationID } = useParams();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMessages();
+    }
+  }, [isAuthenticated]);
+
+  const fetchMessages = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await fetch(
+        `http://localhost:3000/api/chat/${conversationID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setMessages(data.messages || []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setError(error.message);
+      setLoading(false);
+    }
+  };
   return (
     <>
       <nav className="sticky top-0 z-50 border-b bg-white">
         <Navbar
           className="sticky top-0 z-50"
           iconLeft={<BackButton />}
-          header={recipient}
+          header="username"
           iconRight2={
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -26,39 +66,26 @@ export default function chat({ recipient = "recipient" }) {
         />
       </nav>
       <div className="flex-1 overflow-y-auto pb-5">
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
-        <ChatBubble isSent={false} />
-        <ChatBubble isSent={true} />
+        {loading ? (
+          <div className="text-center py-4">Loading messages...</div>
+        ) : error ? (
+          <div className="text-center py-4 text-red-500">{error}</div>
+        ) : messages.length > 0 ? (
+          messages.map((message, index) => (
+            <ChatBubble
+              key={message._id || index}
+              isSent={message.senderID === user?.sub}
+              message={message.message}
+              timestamp={message.timestamp}
+            />
+          ))
+        ) : (
+          <div className="text-center py-4">
+            No messages yet. Start a conversation!
+          </div>
+        )}
       </div>
-      <footer className="flex items-center rounded-2xl justify-between px-1 py-3 border sticky bottom-5 z-50 bg-white">
-        <div className="text-left">
-          <ClickableIcons
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                height="24px"
-                viewBox="0 -960 960 960"
-                width="24px"
-                fill="#000000"
-              >
-                <path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z" />
-              </svg>
-            }
-          />
-        </div>
+      <footer className="fixed bottom-1 left-1 right-1 flex items-center justify-between px-4 py-3 border rounded-2xl z-50 bg-white">
         <div className="flex-1 mx-2">
           <input
             type="text"

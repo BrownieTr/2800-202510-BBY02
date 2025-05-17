@@ -339,36 +339,36 @@ app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
 
 app.get('/api/conversations', jwtCheck, async (req, res) => {
   try {
-    const auth0Id = req.auth.payload?.sub;
+    const auth0ID = req.auth.payload?.sub;
 
-    if(!auth0Id) {
+    if (!auth0ID) {
       return res.status(400).json({ error: 'Auth0 ID not found in token' });
     }
 
     let db = connect.db();
-    let user = await db.collection('users').findOne({ auth0Id: auth0Id });
-    
-    if(!user) {
+    let user = await db.collection('users').findOne({ auth0Id: auth0ID });
+
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     // Find conversations where the user's ID is in the participants array
     let conversations = await db.collection('conversations').find({
       participants: { $in: [user._id] }
     }).toArray();
 
     console.log("Conversations found:", conversations);
-    
+
     // Enhance the conversation data with recipient info
     const enhancedConversations = await Promise.all(conversations.map(async (convo) => {
       // Find the other participant ID (not the current user)
       const otherParticipantId = convo.participants.find(
         id => id.toString() !== user._id.toString()
       );
-      
+
       // Get recipient details
       const recipient = await db.collection('users').findOne({ _id: otherParticipantId });
-      
+
       return {
         _id: convo._id,
         recipientId: otherParticipantId,
@@ -377,7 +377,7 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
         timestamp: convo.lastMessageDate || convo.createdAt || new Date()
       };
     }));
-    
+
     res.json({ conversations: enhancedConversations });
   } catch (error) {
     console.error("Error:", error);
@@ -390,10 +390,10 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
 app.get('/api/events', jwtCheck, async (req, res) => {
   try {
     const db = connect.db();
-    
+
     // Fetch all events from the database
     const events = await db.collection('events').find({}).toArray();
-    
+
     res.json({ events });
   } catch (error) {
     console.error('Error fetching events:', error);
@@ -405,17 +405,17 @@ app.get('/api/events', jwtCheck, async (req, res) => {
 app.post('/api/events/create', jwtCheck, async (req, res) => {
   try {
     const userId = req.auth.payload.sub; // Get Auth0 user ID
-    
+
     // Get event data from request body
     const { name, description, date, time, location } = req.body;
-    
+
     // Validate required fields
     if (!name || !date || !location) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-    
+
     const db = connect.db();
-    
+
     // Create the event object
     const event = {
       creatorId: userId,
@@ -427,10 +427,10 @@ app.post('/api/events/create', jwtCheck, async (req, res) => {
       participants: [userId], // Creator is automatically a participant
       createdAt: new Date()
     };
-    
+
     // Save to database
     const result = await db.collection('events').insertOne(event);
-    
+
     // Return the created event with its ID
     res.status(201).json({
       success: true,
@@ -450,14 +450,14 @@ app.get('/api/events/:eventId', jwtCheck, async (req, res) => {
   try {
     const eventId = req.params.eventId;
     const db = connect.db();
-    
+
     // Find the event by ID
     const event = await db.collection('events').findOne({ _id: new ObjectId(eventId) });
-    
+
     if (!event) {
       return res.status(404).json({ error: 'Event not found' });
     }
-    
+
     res.json({ event });
   } catch (error) {
     console.error('Error fetching event details:', error);
@@ -470,23 +470,71 @@ app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
   try {
     const eventId = req.params.eventId;
     const userId = req.auth.payload.sub;
-    
+
     const db = connect.db();
-    
+
     // Update the event to add the user to participants if not already there
     const result = await db.collection('events').updateOne(
       { _id: new ObjectId(eventId) },
       { $addToSet: { participants: userId } }
     );
-    
+
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Event not found' });
     }
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error joining event:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
+  try {
+    const auth0ID = req.auth.payload?.sub;
+
+    if (!auth0ID) {
+      return res.status(400).json({ error: 'Auth0 ID not found in token' });
+    }
+
+    let db = connect.db();
+    let user = await db.collection('users').findOne({ auth0Id: auth0ID });
+    let conversationID;
+
+    try{
+      conversationID = new ObjectId(req.params.conversationID);
+    }catch (error) {
+      return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    let messages = await db.collection('messages').find({
+      conversationID: conversationID
+    }).toArray();
+
+    console.log("Messages found: ", messages);
+    const enhancedMessages = await Promise.all(messages.map(async (msg) => {
+      // Find the sender ID
+      const senderID = msg.senderID;
+
+      // Get sender details
+      const sender = await db.collection('users').findOne({ _id: new ObjectId(senderID) });
+
+      return {
+        _id: msg._id,
+        senderId: senderID,
+        senderName: sender ? sender.name : 'Unknown User',
+        message: msg.content,
+        timestamp: msg.sentAt || new Date()
+      }
+    }));
+
+    res.json({ messages: enhancedMessages });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: 'Server error', message: error.message });
   }
 });
 

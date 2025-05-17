@@ -80,7 +80,7 @@ export default function Messages() {
         {conversations.length > 0 ? (
           conversations.map((convo) => (
             <Link 
-              to={`/chat/${convo.recipientId}`} 
+              to={`/chat/${convo._id}`} 
               key={convo._id}
               className="w-full"
             >
