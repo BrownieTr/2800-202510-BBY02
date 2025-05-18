@@ -45,6 +45,7 @@ export default function chat() {
       setLoading(false);
     }
   };
+  console.log(messages);
   return (
     <>
       <nav className="sticky top-0 z-50 border-b bg-white">
@@ -74,7 +75,7 @@ export default function chat() {
           messages.map((message, index) => (
             <ChatBubble
               key={message._id || index}
-              isSent={message.senderID === user?.sub}
+              isSent={message.sentByUser}
               message={message.message}
               timestamp={message.timestamp}
             />

@@ -500,7 +500,9 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
 
     let db = connect.db();
     let user = await db.collection('users').findOne({ auth0Id: auth0ID });
+    let sentByUser = false;
     let conversationID;
+    console.log(user)
 
     try{
       conversationID = new ObjectId(req.params.conversationID);
@@ -521,13 +523,18 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
 
       // Get sender details
       const sender = await db.collection('users').findOne({ _id: new ObjectId(senderID) });
+      
+      if (user._id.toString() == senderID) {
+        sentByUser = true;
+      }
 
       return {
         _id: msg._id,
         senderId: senderID,
         senderName: sender ? sender.name : 'Unknown User',
         message: msg.content,
-        timestamp: msg.sentAt || new Date()
+        timestamp: msg.sentAt || new Date(),
+        sentByUser: sentByUser
       }
     }));
 
