@@ -508,6 +508,15 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
     } catch (error) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
     }
+
+    let conversation = await db.collection('conversations').findOne({
+      _id: conversationID
+    });
+
+    let recipientName = await db.collection('users').findOne({
+      _id: { $in: conversation.participants.filter(id => id.toString() !== user._id.toString()) }
+    });
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -535,7 +544,8 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
         senderName: sender ? sender.name : 'Unknown User',
         message: msg.content,
         timestamp: msg.sentAt || new Date(),
-        sentByUser: sentByUser
+        sentByUser: sentByUser,
+        recipientName: recipientName ? recipientName.name : 'Unknown User'
       }
     }));
 

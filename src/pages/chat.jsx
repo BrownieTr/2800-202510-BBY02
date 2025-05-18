@@ -6,7 +6,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useParams } from "react-router-dom";
 
 export default function chat() {
-  const { user, isAuthenticated, isLoading, getAccessTokenSilently } =
+  const { isAuthenticated, isLoading, getAccessTokenSilently } =
     useAuth0();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -93,7 +93,7 @@ export default function chat() {
         <Navbar
           className="sticky top-0 z-50"
           iconLeft={<BackButton />}
-          header="username"
+          header={messages[0]?.recipientName}
         />
       </nav>
       <div className="flex-1 overflow-y-auto pb-5">
@@ -108,7 +108,7 @@ export default function chat() {
               isSent={message.sentByUser}
               message={message.message}
               timestamp={message.timestamp}
-              username={message.senderName || "username"}
+              username={message.senderName}
             />
           ))
         ) : (

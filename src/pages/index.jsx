@@ -1,9 +1,41 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/layout/navbar";
 import Link from "../components/ui/link";
 import ClickableIcons from "../components/ui/clickableIcons";
+import { useAuth0 } from "@auth0/auth0-react";
 
-export default function Index({ username = "username" }) {
+export default function Index() {
+  const { isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
+  const [user, setUser] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMessages();
+    }
+  }, [isAuthenticated]);
+
+  const fetchMessages = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await fetch(`http://localhost:3000/api/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json()
+      setUser(data || {}); // Use data directly instead of data.user
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setError(error.message);
+    }
+  };
+
   return (
     <>
       <Navbar
@@ -35,7 +67,7 @@ export default function Index({ username = "username" }) {
         iconRight2To={"/messages"}
       />
       <h1 className="mt-30 text-2xl font-bold text-center">
-        Welcome {username}
+        Welcome {user.name || "username"}
       </h1>
 
       <div className="mt-40 flex items-center justify-between space-x-4">
