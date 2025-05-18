@@ -500,13 +500,12 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
 
     let db = connect.db();
     let user = await db.collection('users').findOne({ auth0Id: auth0ID });
-    let sentByUser = false;
     let conversationID;
     console.log(user)
 
-    try{
+    try {
       conversationID = new ObjectId(req.params.conversationID);
-    }catch (error) {
+    } catch (error) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
     }
     if (!user) {
@@ -523,8 +522,10 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
 
       // Get sender details
       const sender = await db.collection('users').findOne({ _id: new ObjectId(senderID) });
-      
-      if (user._id.toString() == senderID) {
+
+      let sentByUser = false;
+
+      if (user._id.toString() == senderID.toString()) {
         sentByUser = true;
       }
 
@@ -542,6 +543,52 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: 'Server error', message: error.message });
+  }
+});
+
+app.post('/api/chat/send', jwtCheck, async (req, res) => {
+  try {
+    const auth0ID = req.auth.payload?.sub;
+
+    if (!auth0ID) {
+      return res.status(400).json({ error: 'Auth0 ID not found in token' });
+    }
+
+    let db = connect.db();
+    let user = await db.collection('users').findOne({ auth0Id: auth0ID });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { conversationID, message } = req.body;
+
+    // Validate required fields
+    if (!conversationID || !message) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Create the message object
+    const msg = {
+      conversationID: new ObjectId(conversationID),
+      senderID: user._id,
+      content: message,
+      sentAt: new Date()
+    };
+
+    // Save to database
+    const result = await db.collection('messages').insertOne(msg);
+
+    res.status(201).json({
+      success: true,
+      message: {
+        ...msg,
+        _id: result.insertedId
+      }
+    });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

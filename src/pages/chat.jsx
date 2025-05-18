@@ -1,5 +1,4 @@
 import React, { useState, useEffect, use } from "react";
-import ClickableIcons from "../components/ui/clickableIcons";
 import ChatBubble from "../components/ui/chatBubble";
 import Navbar from "../components/layout/navbar";
 import BackButton from "../components/ui/backButton";
@@ -13,6 +12,7 @@ export default function chat() {
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const { conversationID } = useParams();
+  const [inputText, setInputText] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -39,13 +39,54 @@ export default function chat() {
       const data = await response.json();
       setMessages(data.messages || []);
       setLoading(false);
+      console.log(data);
     } catch (error) {
       console.error("Error fetching messages:", error);
       setError(error.message);
       setLoading(false);
     }
   };
-  console.log(messages);
+
+  const sendMessage = async () => {
+    if (inputText.trim() !== "") {
+      try {
+        const token = await getAccessTokenSilently();
+        const response = await fetch("http://localhost:3000/api/chat/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            conversationID,
+            message: inputText,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            _id: data._id,
+            message: inputText,
+            sentByUser: true,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+
+        setInputText("");
+      } catch (error) {
+        console.error("Error sending message:", error);
+        setError(error.message);
+      }
+    }
+  };
+
   return (
     <>
       <nav className="sticky top-0 z-50 border-b bg-white">
@@ -53,17 +94,6 @@ export default function chat() {
           className="sticky top-0 z-50"
           iconLeft={<BackButton />}
           header="username"
-          iconRight2={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="24px"
-              viewBox="0 -960 960 960"
-              width="24px"
-              fill="#000000"
-            >
-              <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
-            </svg>
-          }
         />
       </nav>
       <div className="flex-1 overflow-y-auto pb-5">
@@ -78,6 +108,7 @@ export default function chat() {
               isSent={message.sentByUser}
               message={message.message}
               timestamp={message.timestamp}
+              username={message.senderName || "username"}
             />
           ))
         ) : (
@@ -92,22 +123,27 @@ export default function chat() {
             type="text"
             placeholder="Message..."
             className="w-full focus:outline-none"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                sendMessage();
+              }
+            }}
           />
         </div>
-        <div className="text-right">
-          <ClickableIcons
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                height="24px"
-                viewBox="0 -960 960 960"
-                width="24px"
-                fill="#000000"
-              >
-                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z" />
-              </svg>
-            }
-          />
+        <div className="text-right flex justify-center">
+          <button onClick={() => sendMessage()}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              viewBox="0 -960 960 960"
+              width="24px"
+              fill="#000000"
+            >
+              <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z" />
+            </svg>
+          </button>
         </div>
       </footer>
     </>
