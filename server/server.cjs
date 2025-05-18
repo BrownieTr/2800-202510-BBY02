@@ -586,30 +586,114 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
         _id: result.insertedId
       }
     });
+
+    //Updates the last message in the conversation
+    await db.collection('conversations').updateOne(
+      { _id: new ObjectId(conversationID) },
+      {
+        $set: {
+          lastMessage: message,
+          lastMessageDate: new Date()
+        }
+      });
+
   } catch (error) {
     console.error('Error sending message:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-//Gets all the messages from the chat of chatID
-app.get('/api/chat/chatMessages/:chatID', jwtCheck, async (req, res) => {
-  // Implementation needed
+app.get('/api/users/search', jwtCheck, async (req, res) => {
+  try {
+    const searchQuery = req.query.q || '';
+    const db = connect.db();
+    // Create a case-insensitive regex pattern that matches names starting with the query
+    const searchPattern = new RegExp(`^${searchQuery}`, 'i');
+    // Find users whose names start with the search query
+    // Exclude the current user from results
+    const currentUser = await db.collection('users').findOne({ auth0Id: req.auth.payload.sub });
+    const query = { name: searchPattern };
+
+    // Add condition to exclude current user if found
+    if (currentUser) {
+      query._id = { $ne: currentUser._id };
+    }
+
+    const users = await db.collection('users')
+      .find(query)
+      .project({
+        _id: 1,
+        name: 1,
+        // Include other fields you want to display in search results
+      })
+      .limit(5)  // Limit results for performance
+      .toArray();
+
+    console.log(`Found ${users.length} users matching "${searchQuery}"`);
+    res.json({ users });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-//Starts a new chat between 2 users
-app.post('/api/chat/newChat/:userID1/:userID2', jwtCheck, async (req, res) => {
-  // Implementation needed
-});
+app.post('/api/conversations/create', jwtCheck, async (req, res) => {
+  try {
+    const auth0ID = req.auth.payload?.sub;
+    const { recipientId } = req.body;
 
-// List all of the chats that a user has
-app.get('/api/chat/allChats/:userID', jwtCheck, async (req, res) => {
-  // Implementation needed
-});
+    if (!auth0ID) {
+      return res.status(400).json({ error: 'Auth0 ID not found in token' });
+    }
 
-//Send a message to the chat. 
-app.post('/api/chat/sendMessage/:userID/:chatID', jwtCheck, async (req, res) => {
-  // Implementation needed
+    if (!recipientId) {
+      return res.status(400).json({ error: 'Recipient ID is required' });
+    }
+
+    let db = connect.db();
+    let currentUser = await db.collection('users').findOne({ auth0Id: auth0ID });
+
+    if (!currentUser) {
+      return res.status(404).json({ error: 'Current user not found' });
+    }
+
+    // Check if recipient exists
+    const recipient = await db.collection('users').findOne({ _id: new ObjectId(recipientId) });
+    if (!recipient) {
+      return res.status(404).json({ error: 'Recipient not found' });
+    }
+
+    // Check if a conversation already exists between these users
+    const existingConversation = await db.collection('conversations').findOne({
+      participants: {
+        $all: [currentUser._id, new ObjectId(recipientId)]
+      }
+    });
+
+    if (existingConversation) {
+      return res.json({
+        conversationId: existingConversation._id,
+        isNew: false
+      });
+    }
+
+    // Create a new conversation
+    const newConversation = {
+      participants: [currentUser._id, new ObjectId(recipientId)],
+      lastMessageDate: new Date(),
+      lastMessage: '',
+    };
+
+    const result = await db.collection('conversations').insertOne(newConversation);
+
+    res.status(201).json({
+      conversationId: result.insertedId,
+      isNew: true
+    });
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.listen(PORT, async () => {

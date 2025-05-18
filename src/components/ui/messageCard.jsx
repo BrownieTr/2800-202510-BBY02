@@ -3,9 +3,9 @@ import ProfileIcon from "./profileIcon";
 
 export default function messageCard({
   username = "username",
-  time = "time",
-  lastMessage = "lastMessage",
-  profilePic,
+  time,
+  lastMessage,
+  profilePic = "https://www.dummyimage.com/50x50/000/fff",
 }) {
   return (
     <button className="w-full text-left">

@@ -14,6 +14,7 @@ import FindingMatch from "./pages/findingMatch";
 import SportsBetting from "./pages/sportsBetting";
 import Index from "./pages/index";
 import { DarkModeProvider } from "./components/ui/DarkModeContext";
+import NewChat from "./pages/newChat";
 
 function App() {
   const { isLoading } = useAuth0();
@@ -105,6 +106,14 @@ function App() {
           element={
             <ProtectedRoute>
               <SportsBetting />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/new-chat"
+          element={
+            <ProtectedRoute>
+              <NewChat />
             </ProtectedRoute>
           }
         />
