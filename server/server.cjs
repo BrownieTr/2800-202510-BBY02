@@ -461,6 +461,66 @@ app.post('/api/chat/sendMessage/:userID/:chatID', jwtCheck, async (req, res) => 
   // Implementation needed
 });
 
+//Set up the betting pool
+app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
+  //Don't know if you need both, but just in case it's here
+  const {eventID, matchID, betDescription, team1Name, team2Name } = req.body;
+  //add to collection
+  //return betting id
+})
+
+app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
+  const {userID, betAmount, backingTeam, betID} = req.body;
+
+  //add object of user and betAmount to backingTeam
+})
+
+app.get('/api/bets/bettingDetails', jwtCheck, async(req,res) =>{ 
+  const {betID} = req.body
+
+  //returns list of teamA backers, teamB backers, and current odds, 
+})
+
+//set up the bet, team a, team b, event id, 
+app.post('/api/bets/DoesntExistJustForReference', jwtCheck, async(req,res) => {
+  //team a and b are objects, with the key being their userID, and the value being amount bet. 
+  const teamAPot = 0;
+  const teamBPot = 0;
+  const {teamA, teamB, eventID} = req.body
+
+  //calculate pot for teamA
+  for(const key in teamA) {
+    teamAPot += teamA[key]
+  }
+
+  //calculate pot for teamB
+  for(const key in teamB) {
+    teamBPot += teamB[key]
+  }
+
+  //This is the return percent if teamx wins.
+  //For example, team a has one person who bet 40 dollars, their return is aReturn * 40
+  const aReturn = (teamAPot + teamBPot ) / teamAPot
+  const bReturn = (teamAPot + teamBPot ) / teamBPot
+
+  
+  //to insert into the database: teamA, aReturn, teamB, bReturn, and event id. 
+
+  //to return, betID and the odds for teamA and teamB
+})
+
+app.post('/api/bets/resolveBet', jwtCheck, async(req,res) => {
+  const {betID, winner} = req.body
+
+  //get bet details from betID
+
+  //details needed: teamA, teamAReturn, teamB, teamBReturn
+
+  if(winner) {
+    
+  }
+})
+
 app.listen(PORT, async () => {
   try {
     await connect.connect();
