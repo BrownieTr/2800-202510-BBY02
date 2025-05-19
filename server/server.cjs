@@ -462,22 +462,138 @@ app.post('/api/chat/sendMessage/:userID/:chatID', jwtCheck, async (req, res) => 
 });
 
 //Set up the betting pool
+//userID: Person who sets up bet is the only person who can close the bet, probably event owner. 
+//Team1Name: Name of team 1
+//team2Name: Name of team 2
 app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
-  //Don't know if you need both, but just in case it's here
-  const {eventID, matchID, betDescription, team1Name, team2Name } = req.body;
-  //add to collection
-  //return betting id
+  try{
+    const {userId, team1Name, team2Name } = req.body;
+  
+    const insertData = {
+      userId: userId,
+      team1Name: team1Name,
+      team2Name: team2Name, 
+      team1Betters: [],
+      team2Betters: [],
+      pot: 0,
+      timestamp: new Date()
+    }
+  
+    //add to collection
+    const insertResults = await db.collection('bets').insertOne(insertData);
+  
+    res.json({success: true, bettingID: insertResults.insertedId})
+    //return betting id
+
+  } catch(error) {
+    console.error("Error:", error);
+    console.error(error.stack);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+
 })
 
-app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
-  const {userID, betAmount, backingTeam, betID} = req.body;
 
-  //add object of user and betAmount to backingTeam
+//
+// betAmount is the amount the user is betting
+//team to bet is the team the user is betting on, either 1 or 2
+app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
+  try{ 
+    const {userId, name, betAmount, teamToBet, betId} = req.body;
+    const insertData = {
+      userId: userId, 
+      bet: betAmount,
+      name: name
+    }
+    
+    if (teamToBet == 1) {
+    const result = await db.collection('bets').updateOne(
+      {_id: betId},
+      {
+        $addToSet: {
+          team1Betters: insertData
+        },
+        $add: { pot: ["$pot", betAmount]}
+      }
+    )
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Betting pool not found' });
+    }
+
+    return res.json({success: true})
+    } else if(backingTeam == 2) {
+    const result = await db.collection('bets').updateOne(
+      {_id: betId},
+      {
+        $addToSet: {
+          team2Betters: insertData
+        },
+        $add: { pot: ["$pot", betAmount]}
+      }
+    )
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Betting pool not found' });
+    }
+    return res.json({success: true})
+    }
+
+
+    
+    //If this is still commented when pushed to dev or main, please delete, kept here for testing purposes
+    // const result = await db.collection('bets').updateOne(
+    //   {_id: betId},
+    //   {
+    //     $set: {
+    //       [backingTeam] : { $concatArrays: [`${backingTeam}`, [insertData]]}
+    //     }
+    //   }
+    // )
+
+  } catch (error) {
+    console.error("Error:", error);
+    console.error(error.stack);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
 })
 
 app.get('/api/bets/bettingDetails', jwtCheck, async(req,res) =>{ 
-  const {betID} = req.body
+  try{
+    const {betId} = req.body
+  
+    let bet = await db.collection('bets').findOne({_id: betId});
 
+    if(!bet) {
+      return res.status(404).json({success: false, error: "Betting pool not found"})
+    }
+  
+    let team1Pool = 0;
+    let team1Names = []
+    for(let i = 0; i < bet.team1Betters.length; i++) {
+      team1Names.push(bet.team1Betters[i].name);
+      team1Pool += bet.team1Betters[i].bet;
+    }
+    let team2Pool = 0;
+    let team2Names = [];
+    for(let i = 0; i < bet.team1Betters.length; i++) {
+      team2Names.push(bet.team2Betters[i].name);
+      team2Pool += bet.team2Betters[i].bet;
+    }
+  
+     const toSend = {
+      success: true,
+      team1Names: team1Names,
+      team2Names: team2Names,
+      team1Odds: ((bet.pot / team1Pool) * 100),
+      team2Odds: ((bet.pot / team2Pool) * 100)
+     }
+  
+     res.json(toSend)
+
+  } catch (error) {
+    console.error("Error:", error);
+    console.error(error.stack);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
   //returns list of teamA backers, teamB backers, and current odds, 
 })
 
@@ -510,14 +626,31 @@ app.post('/api/bets/DoesntExistJustForReference', jwtCheck, async(req,res) => {
 })
 
 app.post('/api/bets/resolveBet', jwtCheck, async(req,res) => {
-  const {betID, winner} = req.body
+  const {betId, winner, winnerOdds} = req.body
 
   //get bet details from betID
 
   //details needed: teamA, teamAReturn, teamB, teamBReturn
-
-  if(winner) {
-    
+  try{
+    const bet = await db.collection('bets').findOne({_id: betId});
+    const payout = {}
+    if(!bet) {
+       return res.status(404).json({success: false, error: "Betting pool not found"})
+    }
+    if(winner == 'team1') {
+      for(let i = 0; i < bet.team1Betters.length; i++) {
+        payout[bet.team1Betters[i].name] = bet.team1Betters[i].bet * winnderOdds
+      }
+    } else if(winner == 'team2') {
+      for(let i = 0; i < bet.team2Betters.length; i++ ) {
+        payout[bet.team2Betters[i].name] = bet.team2Betters[i].bet * winnerOdds
+      }
+    return res.json(payout);
+    }
+  } catch(error) {
+    console.error("Error:", error);
+    console.error(error.stack);
+    res.status(500).json({ error: 'Server error', message: error.message });
   }
 })
 
