@@ -65,7 +65,9 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
         address: "Not set",
         country: "Not set",
         preferences: "Not set",
-        createdAt: new Date()
+        createdAt: new Date(),
+        setUp: false,
+        profilePic: ""
       };
 
       console.log("About to insert user:", user);
@@ -91,7 +93,7 @@ app.post('/api/profile/update', jwtCheck, async (req, res) => {
     const auth0Id = req.auth.payload.sub;
 
     // Get data from request
-    const { name, address, country, preferences } = req.body;
+    const { name, address, country, preferences, setUp, profilePic, email } = req.body;
 
     let db = connect.db();
 
@@ -100,7 +102,7 @@ app.post('/api/profile/update', jwtCheck, async (req, res) => {
       { auth0Id: auth0Id },
       {
         $set: {
-          name, address, country, preferences,
+          name, address, country, preferences, setUp, profilePic, email,
           updatedAt: new Date()
         }
       }
