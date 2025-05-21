@@ -60,7 +60,7 @@ export default function Profile_Details({ onButtonClick, userData, onProfileUpda
   };
 
   return (
-    <section>
+    <section className="px-4 py-2 w-full max-w-3xl mx-auto">
       {isEditing ? (
         <ProfileEditForm
           userData={userData}
@@ -69,17 +69,25 @@ export default function Profile_Details({ onButtonClick, userData, onProfileUpda
         />
       ) : (
         <>
-          <div className="profile-grid">
+          <div className="border-t border-gray-500 divide-y divide-gray-500">
             {details.map(detail => (
-              <div key={detail.id} className="profile-card">
-                <h3>{detail.title}</h3>
-                <div className="detail">{detail.detail}</div>
+              <div
+                key={detail.id}
+                className="flex items-center justify-between px-4 py-3 bg-white transition-colors"
+              >
+                <h3 className="text-base md:text-lg font-medium">{detail.title}</h3>
+                <div className="text-gray-500 text-sm md:text-base">{detail.detail}</div>
               </div>
             ))}
           </div>
-          <div>
-            <Button className='profile-buttons' onClick={() => handleButtonClick(0)}>Back</Button>
-            <Button className='profile-buttons' onClick={() => handleButtonClick(100)}>Edit</Button>
+
+          <div className="flex justify-end gap-4 flex-wrap">
+            <Button onClick={() => handleButtonClick(0)}>
+              Back
+            </Button>
+            <Button onClick={() => handleButtonClick(100)}>
+              Edit
+            </Button>
           </div>
         </>
       )}

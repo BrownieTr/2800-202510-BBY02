@@ -53,6 +53,10 @@
   transform: scale(1.25);
 }
 
+.bell:hover {
+    animation: ring 0.6s ease;
+}
+
 /* Shake keyframes */
 @keyframes ring {
   0% { transform: rotate(0); }
@@ -62,61 +66,6 @@
   60% { transform: rotate(-6deg); }
   75% { transform: rotate(4deg); }
   100% { transform: rotate(0); }
-}
-
-.bell{
-    max-width: 2em;
-    padding: 0 1em 0 1em;
-}
-
-.bell:hover {
-    animation: ring 0.6s ease;
-}
-
-.profile {
-  justify-self: center;
-  width: 12em;
-}
-
-#profile-name {
-  margin-top: 0;
-}
-
-.profile-nav {
-  display: flex;
-  justify-content: space-between;
-}
-
-.option-grid {
-    border-top: 1px solid grey;
-}
-
-.option-card {
-  display: flex;
-  border: 1px solid grey;
-}
-.option-card:hover {
-  transform: scale(1.03);
-}
-
-.profile-grid {
-    border-top: 1px solid grey;
-}
-
-.profile-card {
-    display: flex;
-    border-bottom: 1px solid grey;
-    align-items: center;
-}
-
-.detail {
-    color: gray;
-    margin-left: auto;
-    margin-right: 1em;
-}
-
-.profile-buttons {
-    margin: 1em 1em;
 }
 
 #back-arrow {

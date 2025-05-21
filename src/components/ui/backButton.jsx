@@ -12,6 +12,8 @@ export default function BackButton() {
           xmlns="http://www.w3.org/2000/svg"
           height="24px"
           viewBox="0 -960 960 960"
+          strokeWidth={strokeWidth}
+          className="w-7 h-7 transition-transform hover:scale-125"
           width="24px"
           fill="#000000"
         >
