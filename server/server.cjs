@@ -22,6 +22,7 @@ const jwtCheck = auth({
 
 app.use(jwtCheck);
 
+
 app.get('/users', async (req, res) => {
   let db = connect.db();
   let data = await db.collection('users').find({}).toArray();
@@ -136,7 +137,11 @@ app.post('/api/matchmaking/save-preferences', jwtCheck, async (req, res) => {
     // Connect to database
     const db = connect.db();
     console.log("Connected to database");
-
+    const result = await db.collection('users').findOne(
+      { auth0Id: userId },
+      {
+      }
+    );
     // Remove any existing preferences
     console.log("Removing existing preferences for user:", userId);
     const deleteResult = await db.collection('matchPreferences').deleteMany({
@@ -148,6 +153,7 @@ app.post('/api/matchmaking/save-preferences', jwtCheck, async (req, res) => {
     console.log("Saving new preferences for user:", userId);
     const insertData = {
       userId: userId,
+      name: result.name,
       sport: sport,
       distance: distance,
       latitude: latitude,
@@ -216,7 +222,8 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
 
     const user1 = myPreferences;
     const user2 = potentialMatch;
-
+    console.log("USER 1: ",  user1)
+    console.log("USER 2: ",  user2)
     const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, potentialMatch.latitude, potentialMatch.longitude);
 
     // Create the match
@@ -854,11 +861,11 @@ app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
     }
     if(winner == 1) {
       for(let i = 0; i < bet.team1Betters.length; i++) {
-        payout[bet.team1Betters[i].name] = ((bet.team1Betters[i].bet/team1Pool) * team2Pool) = bet.team1Betters[i].bet
+        payout[bet.team1Betters[i].name] = ((bet.team1Betters[i].bet/team1Pool) * team2Pool)
       }
     } else if(winner == 2) {
       for(let i = 0; i < bet.team2Betters.length; i++ ) {
-        payout[bet.team2Betters[i].name] = ((bet.team2Betters[i].bet/team2Pool) * team1Pool) = bet.team2Betters[i].bet
+        payout[bet.team2Betters[i].name] = ((bet.team2Betters[i].bet/team2Pool) * team1Pool)
       }
     return res.json({success: true, payout: payout});
     }
