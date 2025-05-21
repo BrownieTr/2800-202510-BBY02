@@ -468,11 +468,10 @@ app.post('/api/chat/sendMessage/:userID/:chatID', jwtCheck, async (req, res) => 
 //team2Name: Name of team 2
 app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
   try{
-    const {userId, team1Name, team2Name } = req.body;
+    const { team1Name, team2Name } = req.body;
     const db = connect.db();
 
     const insertData = {
-      userId: userId,
       team1Name: team1Name,
       team2Name: team2Name, 
       team1Betters: [],
@@ -484,7 +483,7 @@ app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
     //add to collection
     const insertResults = await db.collection('bets').insertOne(insertData);
   
-    res.json({success: true, bettingID: insertResults.insertedId})
+    res.json({success: true, bettingId: insertResults.insertedId})
     //return betting id
 
   } catch(error) {
@@ -577,7 +576,6 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{
     }
   
      const toSend = {
-      success: true,
       team1Name: bet.team1Name,
       team2Name: bet.team2Name,
       team1Betters: team1Names,
@@ -588,7 +586,7 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{
       team2Odds: ((bet.pot / team2Pool) * 100)
      }
   
-     res.json(toSend)
+     res.json({success: true, data: toSend})
 
   } catch (error) {
     console.error("Error:", error);
