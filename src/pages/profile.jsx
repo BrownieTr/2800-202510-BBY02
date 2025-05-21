@@ -76,23 +76,29 @@ export default function Profile() {
     return (
         <div>
             <header>
-                <nav className='flex justify-between'>
+                <nav className="mb-4 flex items-center justify-between py-3 h-16 bg-white">
                     <BackButton />
-                    <h3> Profile </h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" viewBox="0 0 24 24" 
-                    strokeWidth={strokeWidth} 
-                    stroke="currentColor" 
-                    className="w-[2em] h-[2em] px-4 hover:animate-ring overflow-visible">
-                        <path strokeLinecap="round" 
-                        strokeLinejoin="round" 
+                    <h3 className="text-lg font-semibold">Profile</h3>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={strokeWidth}
+                        stroke="currentColor"
+                        className="w-8 h-8 bell"
+                    >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 
                         8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 
                         1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 
-                        24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                        24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+                    />
                     </svg>
                 </nav>
             </header>
+
 
             <main>
                 <section className="justify-self-center w-48">
@@ -117,7 +123,7 @@ export default function Profile() {
                             1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                         </svg>
                     )}
-                    <h1 className="mt-0">{displayName}</h1>
+                    <h1 className="mt-0 mb-4">{displayName}</h1>
                 </section>
 
                 {view === "profile" && <Options onOptionClick={handleOptionClick}/>}
