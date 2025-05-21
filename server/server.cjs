@@ -578,8 +578,10 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{
   
      const toSend = {
       success: true,
-      team1Names: team1Names,
-      team2Names: team2Names,
+      team1Name: bet.team1Name,
+      team2Name: bet.team2Name,
+      team1Betters: team1Names,
+      team2Betters: team2Names,
       team1Pool: team1Pool,
       team2Pool: team2Pool,
       team1Odds: ((bet.pot / team1Pool) * 100),
