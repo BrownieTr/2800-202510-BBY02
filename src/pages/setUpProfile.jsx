@@ -1,19 +1,30 @@
 import React from "react";
 import Navbar from "../components/layout/navbar";
-import Button from "../components/ui/button";
 import ClickableIcons from "../components/ui/clickableIcons";
 import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 
+// Main component for setting up a user profile
 export default function setUpProfile() {
+  // State variables to control visibility of different sections
   const [isUsernameVisible, setIsUsernameVisible] = useState(true);
   const [isAddressVisible, setIsAddressVisible] = useState(false);
   const [isSportVisible, setIsSportVisible] = useState(false);
+
+  // State variables to store user input
   const [selectedSports, setSelectedSports] = useState([]);
-  const [usernameError, setUsernameError] = useState("");
-  const [createAccountError, setCreateAccountError] = useState(""); // New state for account creation error
+  const [usernameError, setUsernameError] = useState(""); // Error message for username validation
+  const [createAccountError, setCreateAccountError] = useState(""); // Error message for account creation
+  const [username, setUsername] = useState(""); // User's username
+  const [address, setAddress] = useState(""); // User's address
+  const [country, setCountry] = useState(""); // User's country
+
+  // Auth0 hooks for authentication and navigation
+  const { user, getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
+
+  // List of sports for user selection
   const sports = [
     "football",
     "baseball",
@@ -28,17 +39,15 @@ export default function setUpProfile() {
     "volleyball",
     "cricket",
   ];
-  const [username, setUsername] = useState("");
-  const [address, setAddress] = useState("");
-  const [country, setCountry] = useState("");
-  const { user, getAccessTokenSilently } = useAuth0();
 
+  // Function to validate and check if the username is available
   const checkUsername = async () => {
     const token = await getAccessTokenSilently();
-    
+
     // Clear any previous errors
     setUsernameError("");
-    
+
+    // Validate username input
     if (username.trim() === "") {
       setUsernameError("Username cannot be empty");
       return;
@@ -51,10 +60,11 @@ export default function setUpProfile() {
     }
 
     try {
+      // Fetch existing users to check for username availability
       const response = await fetch(`http://localhost:3000/users`, {
         headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -69,6 +79,7 @@ export default function setUpProfile() {
         return;
       }
 
+      // Proceed to the next step if username is valid and available
       setIsUsernameVisible(false);
       setIsAddressVisible(true);
     } catch (error) {
@@ -77,63 +88,73 @@ export default function setUpProfile() {
     }
   };
 
+  // Function to navigate to the address input section
   const nextAddress = () => {
     setIsAddressVisible(false);
     setIsSportVisible(true);
   };
 
+  // Function to navigate back to the username input section
   const goBackToUsername = () => {
     setIsAddressVisible(false);
     setIsUsernameVisible(true);
   };
 
+  // Function to navigate back to the address input section
   const goBackToAddress = () => {
     setIsSportVisible(false);
     setIsAddressVisible(true);
   };
 
+  // Function to handle sport selection (toggle selection)
   const sportSelect = (sport) => {
     setSelectedSports((prevSelectedSports) => {
       if (prevSelectedSports.includes(sport)) {
+        // Remove sport if already selected
         return prevSelectedSports.filter((item) => item !== sport);
       } else {
+        // Add sport to the selection
         return [...prevSelectedSports, sport];
       }
     });
   };
 
+  // Function to create a user account by sending data to the backend
   const createAccount = async () => {
-    setCreateAccountError("");
-    
+    setCreateAccountError(""); // Clear any previous errors
+
     try {
       const token = await getAccessTokenSilently();
-      
+
+      // Prepare user data to send to the backend
       const userData = {
         name: username,
         address: address,
         country: country,
-        preferences: selectedSports.join(", "),
-        setUp: true,
-        profilePic: user.picture,
-        email: user.email
+        preferences: selectedSports.join(", "), // Convert selected sports to a comma-separated string
+        setUp: true, // Indicates that the profile setup is complete
+        profilePic: user.picture, // User's profile picture from Auth0
+        email: user.email, // User's email from Auth0
       };
-      
+
+      // Send a POST request to update the user's profile
       const response = await fetch('http://localhost:3000/api/profile/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(userData),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to update profile');
       }
-      
+
       const updatedProfile = await response.json();
       console.log('Profile updated successfully:', updatedProfile);
-      
+
+      // Navigate to the home page after successful account creation
       navigate("/home");
     } catch (error) {
       console.error('Error creating account:', error);
@@ -143,11 +164,13 @@ export default function setUpProfile() {
 
   return (
     <>
+      {/* Navbar component */}
       <Navbar header="PlayPal" />
+
+      {/* Main container */}
       <div className="flex flex-col min-h-[calc(100vh-64px)]">
-        <div
-          className={isUsernameVisible ? "flex flex-col flex-grow" : "hidden"}
-        >
+        {/* Username input section */}
+        <div className={isUsernameVisible ? "flex flex-col flex-grow" : "hidden"}>
           <div className="mt-10 px-4">
             <h1 className="text-3xl font-bold">Enter your name</h1>
             <input
@@ -158,7 +181,7 @@ export default function setUpProfile() {
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
-                setUsernameError(""); 
+                setUsernameError(""); // Clear error on input change
               }}
             ></input>
             {usernameError && (
@@ -169,9 +192,9 @@ export default function setUpProfile() {
             <ClickableIcons onClick={checkUsername} icon={"Next"} />
           </div>
         </div>
-        <div
-          className={isAddressVisible ? "flex flex-col flex-grow" : "hidden"}
-        >
+
+        {/* Address input section */}
+        <div className={isAddressVisible ? "flex flex-col flex-grow" : "hidden"}>
           <div className="mt-10 px-4">
             <h1 className="text-3xl font-bold">Enter your address</h1>
             <div>
@@ -198,6 +221,8 @@ export default function setUpProfile() {
             <ClickableIcons onClick={nextAddress} icon={"Next"} />
           </div>
         </div>
+
+        {/* Sport selection section */}
         <div className={isSportVisible ? "flex flex-col flex-grow" : "hidden"}>
           <div className="items-center justify-center mt-6 px-4">
             <h1>Select your favourite sport</h1>

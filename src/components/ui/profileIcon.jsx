@@ -5,8 +5,8 @@ export default function profileIcon({ profilePic, size }) {
     <img
       src={profilePic}
       alt="Profile picture"
-      className={`rounded-full w-${size} h-${size} object-center`}
+      className="rounded-full object-center"
+      style={{ width: `${size}px`, height: `${size}px` }}
     ></img>
   );
 }
- 

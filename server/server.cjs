@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
+const { profile } = require('console');
 
 app.use(cors());
 app.use(express.json());
@@ -376,7 +377,8 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
         recipientId: otherParticipantId,
         recipientName: recipient ? recipient.name : 'Unknown User',
         lastMessage: convo.lastMessage || "",
-        timestamp: convo.lastMessageDate || convo.createdAt || new Date()
+        timestamp: convo.lastMessageDate || convo.createdAt || new Date(),
+        profilePic: recipient ? recipient.profilePic : "https://www.dummyimage.com/40x40/000/fff",
       };
     }));
 
@@ -547,7 +549,8 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
         message: msg.content,
         timestamp: msg.sentAt || new Date(),
         sentByUser: sentByUser,
-        recipientName: recipientName ? recipientName.name : 'Unknown User'
+        recipientName: recipientName ? recipientName.name : 'Unknown User',
+        profilePic: sender.profilePic || "https://www.dummyimage.com/25x25/000/fff"
       }
     }));
 
@@ -636,7 +639,7 @@ app.get('/api/users/search', jwtCheck, async (req, res) => {
       .project({
         _id: 1,
         name: 1,
-        // Include other fields you want to display in search results
+        profilePic: "https://www.dummyimage.com/40x40/000/fff",
       })
       .limit(5)  // Limit results for performance
       .toArray();

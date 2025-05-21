@@ -5,17 +5,19 @@ export default function chatBubble({
   username = "username",
   message = "message",
   isSent,
+  profilePic = "https://www.dummyimage.com/25x25/000/fff",
 }) {
   return (
     <div className="mb-4">
+      {/* Username display */}
       <div className={`mb-1 ${isSent ? "text-right" : "text-left"}`}>
         <p className="text-sm">{username}</p>
       </div>
+
+      {/* Chat bubble with profile icon */}
       <div className={`flex items-center ${isSent ? "flex-row-reverse" : ""}`}>
         <div className={`flex-shrink-0 ${isSent ? "ml-2" : "mr-2"}`}>
-          <ProfileIcon
-            profilePic={"https://www.dummyimage.com/25x25/000/fff"}
-          />
+          <ProfileIcon profilePic={profilePic} size={40} />
         </div>
         <div
           className={`${
