@@ -596,6 +596,8 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{
   //returns list of teamA backers, teamB backers, and current odds, 
 })
 
+//Winner is either 1 or 2: 1 for team1 winning and vice versa
+//Team1 Pool and Team2Pool can be got from bettingDetails. 
 app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
   try{
     const betId = req.params.betId
