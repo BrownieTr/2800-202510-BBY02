@@ -468,7 +468,8 @@ app.post('/api/chat/sendMessage/:userID/:chatID', jwtCheck, async (req, res) => 
 app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
   try{
     const {userId, team1Name, team2Name } = req.body;
-  
+    const db = connect.db();
+
     const insertData = {
       userId: userId,
       team1Name: team1Name,
@@ -497,9 +498,12 @@ app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
 //
 // betAmount is the amount the user is betting
 //team to bet is the team the user is betting on, either 1 or 2
-app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
+app.post('/api/bets/makeBet/:betId', jwtCheck, async(req,res) => {
   try{ 
-    const {userId, name, betAmount, teamToBet, betId} = req.body;
+    const {userId, name, betAmount, teamToBet} = req.body;
+    const betId = req.params.betId;
+    const db = connect.db();
+
     const insertData = {
       userId: userId, 
       bet: betAmount,
@@ -508,12 +512,14 @@ app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
     
     if (teamToBet == 1) {
     const result = await db.collection('bets').updateOne(
-      {_id: betId},
+      {_id: new ObjectId(betId)},
       {
         $addToSet: {
           team1Betters: insertData
         },
-        $add: { pot: ["$pot", betAmount]}
+        $inc : {
+          pot: betAmount
+        }
       }
     )
     if (result.matchedCount === 0) {
@@ -523,12 +529,14 @@ app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
     return res.json({success: true})
     } else if(backingTeam == 2) {
     const result = await db.collection('bets').updateOne(
-      {_id: betId},
+      {_id: new ObjectId(betId)},
       {
         $addToSet: {
           team2Betters: insertData
         },
-        $add: { pot: ["$pot", betAmount]}
+        $inc : {
+          pot: betAmount
+        }
       }
     )
     if (result.matchedCount === 0) {
@@ -537,18 +545,6 @@ app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
     return res.json({success: true})
     }
 
-
-    
-    //If this is still commented when pushed to dev or main, please delete, kept here for testing purposes
-    // const result = await db.collection('bets').updateOne(
-    //   {_id: betId},
-    //   {
-    //     $set: {
-    //       [backingTeam] : { $concatArrays: [`${backingTeam}`, [insertData]]}
-    //     }
-    //   }
-    // )
-
   } catch (error) {
     console.error("Error:", error);
     console.error(error.stack);
@@ -556,11 +552,11 @@ app.post('/api/bets/makeBet', jwtCheck, async(req,res) => {
   }
 })
 
-app.get('/api/bets/bettingDetails', jwtCheck, async(req,res) =>{ 
+app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{ 
   try{
-    const {betId} = req.body
+    const betId = req.params.betId
   
-    let bet = await db.collection('bets').findOne({_id: betId});
+    let bet = await db.collection('bets').findOne({_id: new ObjectId(betId)});
 
     if(!bet) {
       return res.status(404).json({success: false, error: "Betting pool not found"})
@@ -574,7 +570,7 @@ app.get('/api/bets/bettingDetails', jwtCheck, async(req,res) =>{
     }
     let team2Pool = 0;
     let team2Names = [];
-    for(let i = 0; i < bet.team1Betters.length; i++) {
+    for(let i = 0; i < bet.team2Betters.length; i++) {
       team2Names.push(bet.team2Betters[i].name);
       team2Pool += bet.team2Betters[i].bet;
     }
@@ -583,6 +579,8 @@ app.get('/api/bets/bettingDetails', jwtCheck, async(req,res) =>{
       success: true,
       team1Names: team1Names,
       team2Names: team2Names,
+      team1Pool: team1Pool,
+      team2Pool: team2Pool,
       team1Odds: ((bet.pot / team1Pool) * 100),
       team2Odds: ((bet.pot / team2Pool) * 100)
      }
@@ -597,55 +595,25 @@ app.get('/api/bets/bettingDetails', jwtCheck, async(req,res) =>{
   //returns list of teamA backers, teamB backers, and current odds, 
 })
 
-//set up the bet, team a, team b, event id, 
-app.post('/api/bets/DoesntExistJustForReference', jwtCheck, async(req,res) => {
-  //team a and b are objects, with the key being their userID, and the value being amount bet. 
-  const teamAPot = 0;
-  const teamBPot = 0;
-  const {teamA, teamB, eventID} = req.body
-
-  //calculate pot for teamA
-  for(const key in teamA) {
-    teamAPot += teamA[key]
-  }
-
-  //calculate pot for teamB
-  for(const key in teamB) {
-    teamBPot += teamB[key]
-  }
-
-  //This is the return percent if teamx wins.
-  //For example, team a has one person who bet 40 dollars, their return is aReturn * 40
-  const aReturn = (teamAPot + teamBPot ) / teamAPot
-  const bReturn = (teamAPot + teamBPot ) / teamBPot
-
-  
-  //to insert into the database: teamA, aReturn, teamB, bReturn, and event id. 
-
-  //to return, betID and the odds for teamA and teamB
-})
-
-app.post('/api/bets/resolveBet', jwtCheck, async(req,res) => {
-  const {betId, winner, winnerOdds} = req.body
-
-  //get bet details from betID
-
-  //details needed: teamA, teamAReturn, teamB, teamBReturn
+app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
   try{
-    const bet = await db.collection('bets').findOne({_id: betId});
+    const betId = req.params.betId
+    const {winner, team1Pool, team2Pool} = req.body
+    const db = connect.db();
+    const bet = await db.collection('bets').findOne({_id:  new ObjectId(betId)});
     const payout = {}
     if(!bet) {
        return res.status(404).json({success: false, error: "Betting pool not found"})
     }
-    if(winner == 'team1') {
+    if(winner == 1) {
       for(let i = 0; i < bet.team1Betters.length; i++) {
-        payout[bet.team1Betters[i].name] = bet.team1Betters[i].bet * winnderOdds
+        payout[bet.team1Betters[i].name] = ((bet.team1Betters[i].bet/team1Pool) * team2Pool) = bet.team1Betters[i].bet
       }
-    } else if(winner == 'team2') {
+    } else if(winner == 2) {
       for(let i = 0; i < bet.team2Betters.length; i++ ) {
-        payout[bet.team2Betters[i].name] = bet.team2Betters[i].bet * winnerOdds
+        payout[bet.team2Betters[i].name] = ((bet.team2Betters[i].bet/team2Pool) * team1Pool) = bet.team2Betters[i].bet
       }
-    return res.json(payout);
+    return res.json({success: true, payout: payout});
     }
   } catch(error) {
     console.error("Error:", error);
