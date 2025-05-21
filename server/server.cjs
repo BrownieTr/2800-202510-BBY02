@@ -842,6 +842,7 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{
 
 //Winner is either 1 or 2: 1 for team1 winning and vice versa
 //Team1 Pool and Team2Pool can be got from bettingDetails. 
+/** 
 app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
   try{
     const betId = req.params.betId
@@ -868,7 +869,7 @@ app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
     res.status(500).json({ error: 'Server error', message: error.message });
   }
 })
-
+*/
 app.listen(PORT, async () => {
   try {
     await connect.connect();

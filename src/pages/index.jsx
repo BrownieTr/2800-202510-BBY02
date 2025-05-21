@@ -3,19 +3,21 @@ import Navbar from "../components/layout/navbar";
 import Link from "../components/ui/link";
 import ClickableIcons from "../components/ui/clickableIcons";
 import { useAuth0 } from "@auth0/auth0-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Index() {
   const { isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [user, setUser] = useState([]);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchMessages();
+      fetchUser();
     }
   }, [isAuthenticated]);
 
-  const fetchMessages = async () => {
+  const fetchUser = async () => {
     try {
       const token = await getAccessTokenSilently();
       const response = await fetch(`http://localhost:3000/api/profile`, {
@@ -30,6 +32,10 @@ export default function Index() {
 
       const data = await response.json()
       setUser(data || {}); // Use data directly instead of data.user
+      console.log(data.setUp)
+      if(data.setUp === false){
+        navigate("/setUpProfile");
+      }
     } catch (error) {
       console.error("Error fetching messages:", error);
       setError(error.message);

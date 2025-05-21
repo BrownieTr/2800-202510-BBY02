@@ -12,9 +12,10 @@ import CreateEvent from "./pages/createEvent";
 import FavSport from "./pages/favSport";
 import FindingMatch from "./pages/findingMatch";
 import SportsBetting from "./pages/sportsBetting";
-import Index from "./pages/index";
+import Index from "./pages";
 import { DarkModeProvider } from "./components/ui/DarkModeContext";
 import NewChat from "./pages/newChat";
+import SetUpProfile from "./pages/setUpProfile";
 
 function App() {
   const { isLoading } = useAuth0();
@@ -114,6 +115,14 @@ function App() {
           element={
             <ProtectedRoute>
               <NewChat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/setUpProfile"
+          element={
+            <ProtectedRoute>
+              <SetUpProfile />
             </ProtectedRoute>
           }
         />
