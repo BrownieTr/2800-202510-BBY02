@@ -13,7 +13,6 @@ import FavSport from "./pages/favSport";
 import FindingMatch from "./pages/findingMatch";
 import SportsBetting from "./pages/sportsBetting";
 import Index from "./pages/index";
-import { DarkModeProvider } from "./components/ui/DarkModeContext";
 import NewChat from "./pages/newChat";
 
 function App() {
@@ -24,7 +23,6 @@ function App() {
   }
 
   return (
-    <DarkModeProvider>
       <Routes>
         {/* Public routes */}``
         <Route path="/" element={<Landing />} />
@@ -118,7 +116,6 @@ function App() {
           }
         />
       </Routes>
-    </DarkModeProvider>
   );
 }
 

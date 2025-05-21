@@ -69,17 +69,17 @@ export default function Profile_Details({ onButtonClick, userData, onProfileUpda
         />
       ) : (
         <>
-          <div className="profile-grid">
+          <div className="border-t border-gray-500">
             {details.map(detail => (
-              <div key={detail.id} className="profile-card">
+              <div key={detail.id} className="flex items-center border-b border-gray-500">
                 <h3>{detail.title}</h3>
-                <div className="detail">{detail.detail}</div>
+                <div className="text-gray-500 ml-auto mr-4">{detail.detail}</div>
               </div>
             ))}
           </div>
           <div>
-            <Button className='profile-buttons' onClick={() => handleButtonClick(0)}>Back</Button>
-            <Button className='profile-buttons' onClick={() => handleButtonClick(100)}>Edit</Button>
+            <Button className='m-4' onClick={() => handleButtonClick(0)}>Back</Button>
+            <Button className='m-4' onClick={() => handleButtonClick(100)}>Edit</Button>
           </div>
         </>
       )}
