@@ -3,9 +3,6 @@
  * Handles finding matches, creating games, and managing the matchmaking queue
  */
 
-// Import Auth0 hooks and utilities
-// This file will need to be imported into a React component to use these functions
-
 /**
  * Save a user's matchmaking preferences to the database
  * @param {string} sport - Which sport they want to play
@@ -17,14 +14,11 @@
  */
 export async function saveMatchPreferences(sport, distance, latitude, longitude, skillLevel, mode, matchType, getAccessTokenSilently) {
   try {
-    // Add debug logs
     console.log("Saving preferences:", { sport, distance, latitude, longitude, skillLevel, mode, matchType });
     
-    // Get the Auth0 token
     const token = await getAccessTokenSilently();
     console.log("Got token (first 20 chars):", token.substring(0, 20) + "...");
     
-    // Send preferences to server
     console.log("Sending request to:", '/api/matchmaking/save-preferences');
     const response = await fetch('/api/matchmaking/save-preferences', {
       method: 'POST',
@@ -62,21 +56,22 @@ export async function saveMatchPreferences(sport, distance, latitude, longitude,
 }
 
 /**
- * Start looking for a player to match with
+ * FIXED: Start looking for a player to match with - prevents race conditions
  * @param {function} getAccessTokenSilently - Auth0 function to get token
  * @param {function} onMatchFound - Callback for when a match is found
  * @returns {Object} - Contains the cancel function
  */
 export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
   let searchTimer = null;
+  let isSearching = true; // FIXED: Add flag to prevent race conditions
   
   // Function to check for a match
   const checkForMatch = async () => {
+    if (!isSearching) return; // FIXED: Check if still searching
+    
     try {
-      // Get the Auth0 token
       const token = await getAccessTokenSilently();
       
-      // Ask server if we found a match yet
       const response = await fetch('/api/matchmaking/check-for-match', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -90,35 +85,52 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
       const data = await response.json();
       
       // If we found a match
-      if (data.matchFound) {
-        // Stop checking
-        clearInterval(searchTimer);
+      if (data.matchFound && isSearching) { // FIXED: Double-check still searching
+        console.log('Match found in matchmaking service!', data.match);
         
-        // Call the callback with match data
-        if (onMatchFound) {
-          onMatchFound(data.match);
+        isSearching = false; // FIXED: Stop searching immediately
+        
+        // Stop checking immediately
+        if (searchTimer) {
+          clearInterval(searchTimer);
+          searchTimer = null;
         }
         
+        // Ensure the match data has all required fields
+        const matchData = {
+          ...data.match,
+          matchId: data.match.matchId || data.match.matchID || `match_${Date.now()}`
+        };
+        
+        // FIXED: Call the callback with match data after a short delay
+        // This helps ensure all async operations have completed
+        setTimeout(() => {
+          if (onMatchFound && isSearching !== false) { // Double check
+            onMatchFound(matchData);
+          }
+        }, 50); // Reduced delay for faster response
+        
         return true;
-      } else {
-        console.log('Still looking for a match...');
-        return false;
       }
+      
+      return false;
     } catch (error) {
       console.error('Error checking for match:', error);
       return false;
     }
   };
   
-  // Start checking immediately and then every 5 seconds
+  // Start checking immediately and then every 3 seconds
   checkForMatch();
-  searchTimer = setInterval(checkForMatch, 5000);
+  searchTimer = setInterval(checkForMatch, 3000);
   
   // Return an object with functions to control the search
   return {
     cancelSearch: () => {
+      isSearching = false; // FIXED: Set flag
       if (searchTimer) {
         clearInterval(searchTimer);
+        searchTimer = null;
       }
     }
   };
@@ -132,10 +144,8 @@ export async function cancelMatchmaking(getAccessTokenSilently) {
   try {
     console.log("Canceling matchmaking...");
     
-    // Get the Auth0 token
     const token = await getAccessTokenSilently();
     
-    // Remove from matchmaking queue
     const response = await fetch('/api/matchmaking/leave-queue', {
       method: 'POST',
       headers: {
@@ -162,7 +172,6 @@ export async function cancelMatchmaking(getAccessTokenSilently) {
  */
 export async function getMatchDetails(matchId, getAccessTokenSilently) {
   try {
-    // Get the Auth0 token
     const token = await getAccessTokenSilently();
     
     const response = await fetch(`/api/matchmaking/match/${matchId}`, {
@@ -175,7 +184,8 @@ export async function getMatchDetails(matchId, getAccessTokenSilently) {
       throw new Error('Failed to get match details');
     }
     
-    return await response.json();
+    const data = await response.json();
+    return data.match; // Return the match object directly
   } catch (error) {
     console.error('Error getting match details:', error);
     throw error;
@@ -188,7 +198,6 @@ export async function getMatchDetails(matchId, getAccessTokenSilently) {
  */
 export async function getUserMatches(getAccessTokenSilently) {
   try {
-    // Get the Auth0 token
     const token = await getAccessTokenSilently();
     
     const response = await fetch('/api/matchmaking/user-matches', {

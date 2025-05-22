@@ -452,6 +452,7 @@ body {
 
 /* Main content area */
 .main-content {
+  padding-bottom: 40px;
   width: 100%;
 }
 
