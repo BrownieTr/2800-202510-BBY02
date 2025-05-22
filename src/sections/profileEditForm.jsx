@@ -44,7 +44,7 @@ export default function ProfileEditForm({ userData, onSave, onCancel }) {
     }
   };
 
-  const inputBaseClass = "w-full bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 transition duration-300";
+  const inputBaseClass = "shadow appearance-none border rounded w-full py-2 px-3 text-white-700 leading-tight focus:outline-none focus:shadow-outline";
 
   return (
     <form onSubmit={handleSubmit} className="w-full space-y-6">

@@ -25,6 +25,7 @@
     "joi": "^17.13.3",
     "mongo": "^0.1.0",
     "react": "^19.0.0",
+    "react-datepicker": "^8.3.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.5.3"
   },
