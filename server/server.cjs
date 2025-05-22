@@ -9,6 +9,8 @@ const PORT = process.env.PORT || 3000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
 const { profile } = require('console');
+const { send } = require('process');
+const { use } = require('react');
 
 app.use(cors());
 app.use(express.json());
@@ -386,6 +388,8 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
         lastMessage: convo.lastMessage || "",
         timestamp: convo.lastMessageDate || convo.createdAt || new Date(),
         profilePic: recipient ? recipient.profilePic : "https://www.dummyimage.com/40x40/000/fff",
+        unread: convo.unread || false,
+        sender: convo.sender || null,
       };
     }));
 
@@ -615,7 +619,9 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
       {
         $set: {
           lastMessage: message,
-          lastMessageDate: new Date()
+          lastMessageDate: new Date(),
+          unread: true,
+          sender: user._id,
         }
       });
 
@@ -882,6 +888,53 @@ app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
   }
 })
 */
+
+// Mark conversation as read
+app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) => {
+  try {
+    const auth0ID = req.auth.payload?.sub;
+
+    if (!auth0ID) {
+      return res.status(400).json({ error: 'Auth0 ID not found in token' });
+    }
+
+    let db = connect.db();
+    let user = await db.collection('users').findOne({ auth0Id: auth0ID });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const conversationID = req.params.conversationID;
+    
+    try {
+      // Find the conversation
+      const conversation = await db.collection('conversations').findOne({
+        _id: new ObjectId(conversationID)
+      });
+      
+      // Only mark as read if the current user is not the sender
+      if (conversation && conversation.sender && 
+          conversation.sender.toString() !== user._id.toString()) {
+        
+        // Update the conversation to mark as read
+        await db.collection('conversations').updateOne(
+          { _id: new ObjectId(conversationID) },
+          { $set: { unread: false } }
+        );
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating read status:', error);
+      res.status(500).json({ error: 'Server error' });
+    }
+  } catch (error) {
+    console.error('Error marking conversation as read:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(PORT, async () => {
   try {
     await connect.connect();

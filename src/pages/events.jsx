@@ -6,6 +6,8 @@ import EventCard from "../components/ui/eventCard";
 import Footer from "../components/layout/stickyFooter";
 import ClickableIcons from "../components/ui/clickableIcons";
 import BackButton from "../components/ui/backButton";
+import ChatIcon from "../components/ui/chatIcon";
+import { Chat } from "@google/genai";
 
 export default function Events() {
   const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
@@ -115,15 +117,7 @@ export default function Events() {
         }
         iconRightTo={() => navigate('/profile')}
         iconRight2={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24px"
-            viewBox="0 -960 960 960"
-            width="24px"
-            fill="#000000"
-          >
-            <path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
-          </svg>
+          <ChatIcon/>
         }
         iconRight2To={() => navigate('/messages')}
       />
