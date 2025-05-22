@@ -78,22 +78,17 @@ export default function Index() {
       </h1>
 
       <div className="mt-30 flex items-center justify-between space-x-4">
-        <Link
-          to="/events"
-          component={
-            <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
-              Events
-            </button>
-          }
-        />
-        <Link
-          to="/sportsBetting"
-          component={
-            <button className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg">
-              Sports Betting
-            </button>
-          }
-        />
+        <Button 
+        className="rounded-xl w-40 h-56 bg-gray-200 flex 
+          items-center justify-center text-lg text-black"
+        onClick={() => navigate("/events")}>
+          Events
+        </Button>
+        <Button
+        className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg"
+        onClick={() => navigate("/sportsBetting")}>
+          Sports Betting
+        </Button>
       </div>
 
       <div className="mt-30 flex items-center justify-center space-x-4">
