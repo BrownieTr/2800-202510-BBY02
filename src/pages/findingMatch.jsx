@@ -9,14 +9,18 @@ import { getLoadingQuote } from "../services/ai"
 
 export default function FindingMatch() {
   const location = useLocation();
-  // Get preferences from location state or use defaults
-  const {
-    sport = "Sport",
-    distance = 5,
-    skillLevel = "Beginner",
-    mode = "Casual",
-    matchType = "1v1"
-  } = location.state || {};
+  let details;
+  if(location.state) {
+    details = location.state;
+  } else {
+    details = {
+    sport : "Sport",
+    distance : 5,
+    skillLevel : "Beginner",
+    mode : "Casual",
+    matchType : "1v1"
+    }
+  }
 
   const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
   const navigate = useNavigate();
@@ -56,7 +60,7 @@ export default function FindingMatch() {
 
       const quoter = setInterval(async () => {
         try {
-          setQuote(await getLoadingQuote(sport, 'tip'))
+          setQuote(await getLoadingQuote(details.sport, 'tip'))
         } catch {
           // Handle error silently
         }
@@ -71,7 +75,7 @@ export default function FindingMatch() {
         clearInterval(quoter);
       };
     }
-  }, [isAuthenticated, getAccessTokenSilently, navigate, sport]);
+  }, [isAuthenticated, getAccessTokenSilently, navigate, details.sport]);
 
   // Format the search time as mm:ss
   const formatTime = (seconds) => {
@@ -140,23 +144,23 @@ export default function FindingMatch() {
             <div className="grid grid-cols-2 gap-y-4 gap-x-6 mb-4">
               <div>
                 <p className="font-semibold text-white opacity-80">Sport</p>
-                <p className="text-white">{sport}</p>
+                <p className="text-white">{details.sport}</p>
               </div>
               <div>
                 <p className="font-semibold text-white opacity-80">Distance</p>
-                <p className="text-white">{distance} km</p>
+                <p className="text-white">{details.distance} km</p>
               </div>
               <div>
                 <p className="font-semibold text-white opacity-80">Skill Level</p>
-                <p className="text-white">{skillLevel}</p>
+                <p className="text-white">{details.skillLevel}</p>
               </div>
               <div>
                 <p className="font-semibold text-white opacity-80">Mode</p>
-                <p className="text-white">{mode}</p>
+                <p className="text-white">{details.mode}</p>
               </div>
               <div className="col-span-2">
                 <p className="font-semibold text-white opacity-80">Match Type</p>
-                <p className="text-white">{matchType}</p>
+                <p className="text-white">{details.matchType}</p>
               </div>
             </div>
           </div>
