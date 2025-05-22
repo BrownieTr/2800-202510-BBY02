@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import Navbar from "../components/layout/navbar";
+import GlassNavbar from "../components/layout/glassNavbar";
+import GlassTabBar from "../components/layout/glassTabBar";
+import GlassButton from "../components/ui/glassButton";
 import { startLookingForMatch, cancelMatchmaking } from "../services/matchMaking";
 import { getLoadingQuote } from "../services/ai"
 
 export default function FindingMatch() {
   const location = useLocation();
   // Get preferences from location state or use defaults
-  const { 
-    sport = "Sport", 
-    distance = 5, 
-    skillLevel = "Beginner", 
-    mode = "Casual", 
-    matchType = "1v1" 
+  const {
+    sport = "Sport",
+    distance = 5,
+    skillLevel = "Beginner",
+    mode = "Casual",
+    matchType = "1v1"
   } = location.state || {};
 
   const { getAccessTokenSilently, isAuthenticated, loginWithRedirect } = useAuth0();
@@ -56,7 +58,7 @@ export default function FindingMatch() {
         try {
           setQuote(await getLoadingQuote(sport, 'tip'))
         } catch {
-
+          // Handle error silently
         }
       }, 10000)
 
@@ -69,7 +71,7 @@ export default function FindingMatch() {
         clearInterval(quoter);
       };
     }
-  }, [isAuthenticated, getAccessTokenSilently, navigate]);
+  }, [isAuthenticated, getAccessTokenSilently, navigate, sport]);
 
   // Format the search time as mm:ss
   const formatTime = (seconds) => {
@@ -95,58 +97,87 @@ export default function FindingMatch() {
     }
   };
 
+  // Back icon
+  const backIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+  );
+
   return (
-    <>
-      <Navbar header="PlayPal" />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="font-bold text-4xl mt-10 text-center">Finding a Match...</h1>
-        
-        {/* Search time display */}
-        <div className="mt-4 text-center text-2xl">
-          {formatTime(searchTime)}
-        </div>
-        
-        {/* Match preferences */}
-        <div className="mt-10 bg-gray-100 p-6 rounded-lg shadow-md mx-auto max-w-md">
-          <h2 className="font-bold text-xl mb-4">Match Preferences</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="font-semibold">Sport:</p>
-              <p>{sport}</p>
-            </div>
-            <div>
-              <p className="font-semibold">Distance:</p>
-              <p>{distance} km</p>
-            </div>
-            <div>
-              <p className="font-semibold">Skill Level:</p>
-              <p>{skillLevel}</p>
-            </div>
-            <div>
-              <p className="font-semibold">Mode:</p>
-              <p>{mode}</p>
-            </div>
-            <div>
-              <p className="font-semibold">Match Type:</p>
-              <p>{matchType}</p>
+    <div>
+      {/* Background decoration */}
+      <div className="bg-circle bg-circle-1"></div>
+      <div className="bg-circle bg-circle-2"></div>
+      
+      <GlassNavbar
+        title="Find Match"
+        leftIcon={backIcon}
+        onLeftIconClick={handleCancel}
+      />
+      
+      <div className="app-container">
+        <main className="main-content">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold text-white mb-2">Finding a Match</h1>
+            <div className="text-5xl text-white font-bold">{formatTime(searchTime)}</div>
+            <div className="flex justify-center mt-4">
+              <div className="w-12 h-12 relative">
+                <div className="absolute inset-0 rounded-full bg-white opacity-25 animate-ping"></div>
+                <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white bg-opacity-30">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
-          <div>
-            <p className='font-semibold'>Loading Quote:</p>
-            <p>{quote}</p>
+          
+          {/* Match preferences */}
+          <div className="glass-card">
+            <h2 className="text-xl font-bold mb-4">Match Preferences</h2>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-6 mb-4">
+              <div>
+                <p className="font-semibold text-white opacity-80">Sport</p>
+                <p className="text-white">{sport}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-white opacity-80">Distance</p>
+                <p className="text-white">{distance} km</p>
+              </div>
+              <div>
+                <p className="font-semibold text-white opacity-80">Skill Level</p>
+                <p className="text-white">{skillLevel}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-white opacity-80">Mode</p>
+                <p className="text-white">{mode}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="font-semibold text-white opacity-80">Match Type</p>
+                <p className="text-white">{matchType}</p>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        {/* Cancel button */}
-        <div className="flex justify-center mt-10">
-          <button 
+          
+          {/* Quote */}
+          <div className="glass-card">
+            <h2 className="text-xl font-bold mb-2">Tip</h2>
+            <p className="italic">{quote}</p>
+          </div>
+          
+          {/* Cancel button */}
+          <GlassButton
+            className="w-full bg-red-500 bg-opacity-30 mt-6 py-4"
             onClick={handleCancel}
-            className="rounded-xl w-36 h-20 bg-red-500 text-white font-bold text-lg hover:bg-red-600 transition"
           >
-            Cancel
-          </button>
-        </div>
+            Cancel Search
+          </GlassButton>
+        </main>
       </div>
-    </>
+      
+      <GlassTabBar />
+    </div>
   );
 }

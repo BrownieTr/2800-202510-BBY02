@@ -1,38 +1,40 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import Button from "./button.jsx";
+import GlassButton from "./glassButton.jsx";
 
 const LogoutPopUp = ({onOptionClick}) => {
   const { logout } = useAuth0();
   
-    const handleClick = (id) => {
-        onOptionClick(id);
-    }
+  const handleClick = (id) => {
+    onOptionClick(id);
+  }
 
   return (
-<div className="fixed inset-0 bg-grey bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-  <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center space-y-6 animate-fadeIn">
-    <h2 className="text-xl font-semibold text-gray-800">
-      Are you sure you want to log out?
-    </h2>
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30 backdrop-blur-md">
+      <div className="glass-card max-w-sm w-full text-center space-y-6 animate-fadeIn transform transition-all duration-300 scale-105">
+        <h2 className="text-xl font-semibold text-white">
+          Are you sure you want to log out?
+        </h2>
 
-    <div className="flex justify-center gap-4">
-      <Button 
-        className="text-white bg-blue-600 hover:bg-blue-700" 
-        onClick={() => handleClick(0)}>Cancel</Button>
-      <Button
-        className="text-white bg-red-600 hover:bg-red-700"
-        onClick={() =>
-          logout({
-            logoutParams: { returnTo: window.location.origin },
-          })
-        }
-      >
-        Log out
-      </Button>
+        <div className="flex justify-center gap-4 mt-6">
+          <GlassButton
+            onClick={() => handleClick(0)}
+          >
+            Cancel
+          </GlassButton>
+          
+          <GlassButton
+            className="bg-red-500 bg-opacity-20 border-red-300 border-opacity-30"
+            onClick={() =>
+              logout({
+                logoutParams: { returnTo: window.location.origin },
+              })
+            }
+          >
+            Log out
+          </GlassButton>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
   );
 };
 

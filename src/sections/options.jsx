@@ -1,74 +1,53 @@
 import React from 'react';
 
 export default function Options({onOptionClick}) {
-    const strokeWidth = 0.65;
     const options = [
         {
-            id: 1,
-            icon: <svg xmlns="http://www.w3.org/2000/svg" 
-                       fill="none" 
-                       viewBox="0 0 24 24" 
-                       strokeWidth={strokeWidth} 
-                       stroke="currentColor" 
-                       className="w-full transition-transform hover:scale-125">
-                    <path strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 
-                          0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 
-                          9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 
-                          9.753 0 0 0 9.002-5.998Z" />
-                  </svg>,
-            title: "Dark mode"
-        },
-        {
             id: 2,
-            icon: <svg xmlns="http://www.w3.org/2000/svg" 
-                       fill="none" 
-                       viewBox="0 0 24 24" 
-                       strokeWidth={strokeWidth} 
-                       stroke="currentColor" 
-                       className="w-full transition-transform hover:scale-125">
-                    <path strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 
-                          0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 
-                          0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            icon: <svg xmlns="http://www.w3.org/2000/svg"
+                       width="20" height="20"
+                       viewBox="0 0 24 24"
+                       fill="none"
+                       stroke="currentColor"
+                       strokeWidth="2"
+                       strokeLinecap="round"
+                       strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
                   </svg>,
             title: "Profile details"
         },
-        // {
-        //     id: 3,
-        //     icon: <svg xmlns="http://www.w3.org/2000/svg" 
-        //                fill="none" 
-        //                viewBox="0 0 24 24" 
-        //                strokeWidth={strokeWidth} 
-        //                stroke="currentColor" 
-        //                className="w-full transition-transform hover:scale-125">
-        //             <path strokeLinecap="round" 
-        //                   strokeLinejoin="round" 
-        //                   d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 
-        //                   0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 
-        //                   3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 
-        //                   1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5" />
-        //           </svg>,
-        //     title: "Settings"
-        // },
+        {
+            id: 3,
+            icon: <svg xmlns="http://www.w3.org/2000/svg"
+                       width="20" height="20"
+                       viewBox="0 0 24 24"
+                       fill="none"
+                       stroke="currentColor"
+                       strokeWidth="2"
+                       strokeLinecap="round"
+                       strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>,
+            title: "Settings"
+        },
         {
             id: 4,
-            icon: <svg xmlns="http://www.w3.org/2000/svg" 
-                       fill="none" viewBox="0 0 24 24" 
-                       strokeWidth={strokeWidth} 
-                       stroke="currentColor" 
-                       className="w-full transition-transform hover:scale-125">
-                    <path strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 
-                          0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0
-                          0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+            icon: <svg xmlns="http://www.w3.org/2000/svg"
+                       width="20" height="20"
+                       viewBox="0 0 24 24"
+                       fill="none"
+                       stroke="currentColor"
+                       strokeWidth="2"
+                       strokeLinecap="round"
+                       strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
                   </svg>,
             title: "Log out"
         }
-        
     ];
     
     const handleClick = (id) => {
@@ -76,22 +55,25 @@ export default function Options({onOptionClick}) {
     }
 
     return (
-        <section className="border-t border-gray-500 w-full max-w-3xl mx-auto">
-        {options.map(profile => (
-            <div
-            key={profile.id}
-            className="flex items-center border border-gray-500 
-            p-2 w-full transition-transform hover:scale-105"
-            onClick={() => handleClick(profile.id)}
-            >
-            <div className="w-7 h-8 flex items-center justify-center text-xl">
-                {profile.icon}
+        <div className="glass-card">
+            <h2 className="text-xl font-bold mb-4">Options</h2>
+            
+            <div className="divide-y divide-white divide-opacity-10">
+                {options.map(option => (
+                    <div
+                        key={option.id}
+                        className="flex items-center py-4 cursor-pointer transition-all duration-300 hover:bg-white hover:bg-opacity-10 rounded-lg px-3"
+                        onClick={() => handleClick(option.id)}
+                    >
+                        <div className="w-10 h-10 flex items-center justify-center bg-white bg-opacity-10 rounded-full mr-4">
+                            {option.icon}
+                        </div>
+                        <h3 className="text-white text-lg font-medium">
+                            {option.title}
+                        </h3>
+                    </div>
+                ))}
             </div>
-            <h3 className="ml-3 text-base md:text-lg font-medium text-center">
-                {profile.title}
-            </h3>
-            </div>
-        ))}
-        </section>
+        </div>
     );
 }

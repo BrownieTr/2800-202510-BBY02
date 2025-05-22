@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/layout/navbar";
-import MessageCard from "../components/ui/messageCard";
-import BackButton from "../components/ui/backButton";
 import { useAuth0 } from "@auth0/auth0-react";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import GlassNavbar from "../components/layout/glassNavbar";
+import GlassTabBar from "../components/layout/glassTabBar";
+import GlassMessageCard from "../components/ui/glassMessageCard";
+import GlassButton from "../components/ui/glassButton";
 
 export default function Messages() {
-  // Destructure Auth0 hooks for authentication and user data
-  const { user, isAuthenticated, isLoading, getAccessTokenSilently } =
-    useAuth0();
+  const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
 
   // State variables to manage conversations, loading state, and errors
   const [conversations, setConversations] = useState([]);
@@ -78,98 +76,124 @@ export default function Messages() {
     }
   };
 
+  // Back icon
+  const backIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+  );
+  
+  // Profile icon
+  const profileIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+  );
+  
+  // Add icon
+  const addIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+  );
+
   // Show a loading screen if data is still being fetched
   if (isLoading || loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
+      <div className="flex justify-center items-center h-screen text-white">
+        <div className="bg-circle bg-circle-1"></div>
+        <div className="bg-circle bg-circle-2"></div>
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 relative mb-4">
+            <div className="absolute inset-0 rounded-full bg-white opacity-25 animate-ping"></div>
+            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white bg-opacity-30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-white text-xl font-semibold">Loading messages...</p>
+        </div>
       </div>
     );
   }
 
-  // Display an error message if there was an issue fetching data
-  if (error) {
-    return <div className="text-red-500 p-4">Error: {error}</div>;
-  }
-
-  // Prompt the user to log in if they are not authenticated
-  if (!isAuthenticated) {
-    return <div className="p-4">Please log in to view your messages.</div>;
-  }
-
-  // Log the fetched conversations to the console for debugging
-  console.log("Conversations:", conversations);
-  console.log("User data:", userData);
-
   // Render the messages page
   return (
-    <>
-      {/* Navbar with navigation buttons */}
-      <nav className="sticky top-0 z-50 bg-white">
-        <Navbar
-          iconLeft={<BackButton />}
-          header="Messages"
-          iconRight={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="24px"
-              viewBox="0 -960 960 960"
-              width="24px"
-              fill="#000000"
-            >
-              <path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z" />
-            </svg>
-        }
-        iconRightTo={() => navigate('/profile')}
-        iconRight2={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="24px"
-              viewBox="0 -960 960 960"
-              width="24px"
-              fill="#000000"
-              className="ml-auto"
-            >
-              <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
-            </svg>
-        }
-        iconRight2To={() => navigate('/new-chat')}
-        />
-      </nav>
+    <div>
+      {/* Background decoration */}
+      <div className="bg-circle bg-circle-1"></div>
+      <div className="bg-circle bg-circle-2"></div>
+      
+      <GlassNavbar
+        title="Messages"
+        leftIcon={backIcon}
+        rightIcon={profileIcon}
+        rightIcon2={addIcon}
+        onLeftIconClick={() => navigate("/home")}
+        onRightIconClick={() => navigate("/profile")}
+        onRightIcon2Click={() => navigate("/new-chat")}
+      />
+      
+      <div className="app-container">
+        <main className="main-content">
+          {error && (
+            <div className="glass-card bg-red-500 bg-opacity-25 mb-4">
+              <p className="text-white">{error}</p>
+            </div>
+          )}
+          
+          {!isAuthenticated && (
+            <div className="glass-card text-center">
+              <p className="text-white">Please log in to view your messages</p>
+            </div>
+          )}
+          
+          {/* Message list */}
+          {conversations.length > 0 ? (
+            <div>
+              {conversations.map((convo) => {
+                // Only show as unread if the current user is not the sender
+                const isUserSender =
+                  userData &&
+                  convo.sender &&
+                  convo.sender.toString() === userData._id.toString();
+                const shouldShowUnread = convo.unread && !isUserSender;
 
-      {/* Main content area */}
-      <div className="flex flex-col items-center mt-5 gap-1 pb-20">
-        {/* Display conversations if available */}
-        {conversations.length > 0 ? (
-          conversations.map((convo) => {
-            // Only show as unread if the current user is not the sender
-            // (unread stays true if the current user didn't send the last message)
-            const isUserSender =
-              userData &&
-              convo.sender &&
-              convo.sender.toString() === userData._id.toString();
-            const shouldShowUnread = convo.unread && !isUserSender;
-
-            return (
-              <Link to={`/chat/${convo._id}`} key={convo._id} className="w-full">
-                <MessageCard
-                  profilePic={
-                    convo.profilePic ||
-                    "https://www.dummyimage.com/40x40/000/fff"
-                  }
-                  username={convo.recipientName || "Unknown User"}
-                  lastMessage={convo.lastMessage || "No messages yet"}
-                  time={new Date(convo.timestamp).toLocaleString()}
-                  unread={shouldShowUnread}
-                />
-              </Link>
-            );
-          })
-        ) : (
-          // Show a message if no conversations are available
-          <div className="text-gray-500 p-4">No conversations yet</div>
-        )}
+                return (
+                  <Link to={`/chat/${convo._id}`} key={convo._id} className="block">
+                    <GlassMessageCard
+                      profilePic={
+                        convo.profilePic ||
+                        "https://www.dummyimage.com/40x40/000/fff"
+                      }
+                      username={convo.recipientName || "Unknown User"}
+                      lastMessage={convo.lastMessage || "No messages yet"}
+                      time={new Date(convo.timestamp).toLocaleString()}
+                      unread={shouldShowUnread}
+                    />
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="glass-card text-center">
+              <h2 className="text-xl font-bold mb-2">No conversations yet</h2>
+              <p className="mb-4 text-white text-opacity-80">
+                Start a new conversation by clicking the + button
+              </p>
+              <GlassButton onClick={() => navigate("/new-chat")}>
+                New Conversation
+              </GlassButton>
+            </div>
+          )}
+        </main>
       </div>
-    </>
+      
+      <GlassTabBar />
+    </div>
   );
 }

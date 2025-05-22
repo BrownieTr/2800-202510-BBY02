@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/layout/navbar";
-import Link from "../components/ui/link";
-import ClickableIcons from "../components/ui/clickableIcons";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
-import Button from "../components/ui/button";
-import ChatIcon from "../components/ui/chatIcon";
+import GlassNavbar from "../components/layout/glassNavbar";
+import GlassTabBar from "../components/layout/glassTabBar";
+import GlassButton from "../components/ui/glassButton";
+import GlassBettingCard from "../components/ui/glassBettingCard";
 
 export default function Index() {
   const { isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
@@ -33,7 +32,7 @@ export default function Index() {
       }
 
       const data = await response.json();
-      setUser(data || {}); // Use data directly instead of data.user
+      setUser(data || {});
       console.log(data.setUp);
       if (data.setUp === false) {
         navigate("/setUpProfile");
@@ -44,52 +43,109 @@ export default function Index() {
     }
   };
 
+  // Profile icon SVG
+  const profileIcon = (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+  );
+  
+  // Message icon SVG
+  const messageIcon = (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  );
+
   return (
-    <>
-      <Navbar
-        header="PlayPal"
-        iconRight={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24px"
-            viewBox="0 -960 960 960"
-            width="24px"
-            fill="#000000"
-          >
-            <path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z" />
-          </svg>
-        }
-        iconRightTo={() => navigate("/profile")}
-        iconRight2={<ChatIcon />}
-        iconRight2To={() => navigate("/messages")}
+    <div>
+      {/* Background decoration */}
+      <div className="bg-circle bg-circle-1"></div>
+      <div className="bg-circle bg-circle-2"></div>
+      
+      <GlassNavbar
+        title="PlayPal"
+        rightIcon={profileIcon}
+        rightIcon2={messageIcon}
+        onRightIconClick={() => navigate("/profile")}
+        onRightIcon2Click={() => navigate("/messages")}
       />
-      <h1 className="mt-20 text-2xl font-bold text-center">
-        Welcome {user.name || "username"}
-      </h1>
-
-      <div className="mt-30 flex items-center justify-between space-x-4">
-        <Button 
-        className="rounded-xl w-40 h-56 bg-gray-200 flex 
-          items-center justify-center text-lg text-black"
-        onClick={() => navigate("/events")}>
-          Events
-        </Button>
-        <Button
-        className="rounded-2xl w-40 h-56 bg-gray-200 flex items-center justify-center text-lg"
-        onClick={() => navigate("/sportsBetting")}>
-          Sports Betting
-        </Button>
+      
+      <div className="app-container">
+        <main className="main-content">
+          <h1 className="text-2xl font-bold text-center text-white mb-6">
+            Welcome {user.name || "Player"}
+          </h1>
+          
+          {/* Featured match card */}
+          <GlassBettingCard
+            setting="Today, 8:00 PM • Local Arena"
+            team1="Lakers"
+            team2="Warriors"
+            odds1="1.85"
+            odds2="2.50"
+            odds3="1.95"
+          />
+          
+          {/* Main features */}
+          <div className="feature-grid">
+            <GlassButton
+              isFeature={true}
+              onClick={() => navigate("/events")}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="mb-2" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Events
+            </GlassButton>
+            
+            <GlassButton
+              isFeature={true}
+              onClick={() => navigate("/sportsBetting")}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="mb-2" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="14 2 18 6 7 17 3 17 3 13 14 2"></polygon>
+                <line x1="3" y1="22" x2="21" y2="22"></line>
+              </svg>
+              Sports Betting
+            </GlassButton>
+          </div>
+          
+          {/* Find Match button */}
+          <GlassButton
+            className="w-full text-lg py-4 mt-4"
+            onClick={() => navigate("/match-preferences")}
+          >
+            Find Match
+          </GlassButton>
+        </main>
       </div>
-
-      <div className="mt-30 flex items-center justify-center space-x-4">
-        <Button
-          className="rounded-xl w-36 h-20 bg-gray-200 flex
-        items-center justify-center text-lg text-black"
-          onClick={() => navigate("/match-preferences")}
-        >
-          Find Match
-        </Button>
-      </div>
-    </>
+      
+      <GlassTabBar />
+    </div>
   );
 }
