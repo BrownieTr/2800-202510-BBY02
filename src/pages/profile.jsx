@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import GlassNavbar from '../components/layout/glassNavbar';
+import GlassTabBar from '../components/layout/glassTabBar';
+import GlassButton from '../components/ui/glassButton';
 import Options from '../sections/options.jsx';
 import Profile_Details from '../sections/profile_details.jsx';
-import BackButton from '../components/ui/backButton.jsx';
 import LogoutPopUp from '../components/ui/logoutPopUp.jsx';
 
 export default function Profile() {
-    // Define strokeWidth here as a constant at the component level
-    const strokeWidth = 0.65;
+    const navigate = useNavigate();
     const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
     const [userData, setUserData] = useState(null);
     const [view, setView] = useState("profile");
@@ -60,79 +62,106 @@ export default function Profile() {
         }));
     };
     
+    // Back icon
+    const backIcon = (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    );
+    
+    // Notification icon
+    const notificationIcon = (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+    );
+    
     // Display loading when Auth0 is still loading
     if (isLoading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="flex justify-center items-center h-screen text-white">
+                <div className="bg-circle bg-circle-1"></div>
+                <div className="bg-circle bg-circle-2"></div>
+                <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 relative mb-4">
+                        <div className="absolute inset-0 rounded-full bg-white opacity-25 animate-ping"></div>
+                        <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white bg-opacity-30">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <p className="text-white text-xl font-semibold">Loading profile...</p>
+                </div>
+            </div>
+        );
     }
     
     // Get display name from userData or Auth0 user
-    const displayName = userData?.name 
+    const displayName = userData?.name
     || (user ? (user.name || user.nickname) : "Your Profile");
 
     return (
         <div>
-            <header>
-                <nav className="mb-4 flex items-center justify-between py-3 h-16 bg-white">
-                    <BackButton />
-                    <h3 className="text-lg font-semibold">Profile</h3>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={strokeWidth}
-                        stroke="currentColor"
-                        className="w-8 h-8 bell"
-                    >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 
-                        8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 
-                        1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 
-                        24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-                    />
-                    </svg>
-                </nav>
-            </header>
+            {/* Background decoration */}
+            <div className="bg-circle bg-circle-1"></div>
+            <div className="bg-circle bg-circle-2"></div>
+            
+            <GlassNavbar
+                title="Profile"
+                leftIcon={backIcon}
+                rightIcon={notificationIcon}
+                onLeftIconClick={() => navigate("/home")}
+            />
+            
+            <div className="app-container">
+                <main className="main-content">
+                    <div className="glass-card text-center">
+                        <div className="flex flex-col items-center">
+                            {(userData?.picture || user?.picture) ? (
+                                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white border-opacity-30 mb-4">
+                                    <img
+                                        src={userData?.picture || user?.picture}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="w-24 h-24 rounded-full bg-white bg-opacity-10 flex items-center justify-center mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                            )}
+                            <h1 className="text-xl font-bold">{displayName}</h1>
+                        </div>
+                    </div>
 
-
-            <main>
-                <section className="justify-self-center w-48">
-                    {(userData?.picture || user?.picture) ? (
-                        <img 
-                            src={userData?.picture || user?.picture} 
-                            alt="Profile" 
-                            className="justify-self-center" 
-                            style={{ width: '100px', height: '100px', borderRadius: '50%' }} 
+                    {view === "profile" && <Options onOptionClick={handleOptionClick}/>}
+                    {view === "details" && (
+                        <Profile_Details
+                            onButtonClick={handleOptionClick}
+                            userData={userData}
+                            onProfileUpdate={handleProfileUpdate}
                         />
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" viewBox="0 0 24 24" 
-                        strokeWidth={strokeWidth} 
-                        stroke="currentColor" 
-                        className="justify-self-center">
-                            <path strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 
-                            7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 
-                            0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 
-                            1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                        </svg>
                     )}
-                    <h1 className="mt-0 mb-4">{displayName}</h1>
-                </section>
-
-                {view === "profile" && <Options onOptionClick={handleOptionClick}/>}
-                {view === "details" && (
-                    <Profile_Details 
-                        onButtonClick={handleOptionClick} 
-                        userData={userData}
-                        onProfileUpdate={handleProfileUpdate}
-                    />
-                )}
-                {view === "settings" && <div>Settings</div>}
-                {view === "logout" && (<LogoutPopUp onOptionClick={handleOptionClick}/>)}
-            </main>
+                    {view === "settings" && (
+                        <div className="glass-card">
+                            <h2>Settings</h2>
+                            <p className="mt-4 text-white text-opacity-80">Settings page is under construction.</p>
+                            <div className="flex justify-end mt-4">
+                                <GlassButton onClick={() => setView("profile")}>Back</GlassButton>
+                            </div>
+                        </div>
+                    )}
+                    {view === "logout" && (<LogoutPopUp onOptionClick={handleOptionClick}/>)}
+                </main>
+            </div>
+            
+            <GlassTabBar />
         </div>
     );
 }

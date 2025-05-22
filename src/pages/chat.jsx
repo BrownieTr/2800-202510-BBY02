@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from "react";
-import ChatBubble from "../components/ui/chatBubble";
-import Navbar from "../components/layout/navbar";
-import BackButton from "../components/ui/backButton";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import { useParams } from "react-router-dom";
+import GlassChatBubble from "../components/ui/glassChatBubble";
+import GlassNavbar from "../components/layout/glassNavbar";
+import GlassTabBar from "../components/layout/glassTabBar";
 
-export default function chat() {
+export default function Chat() {
   // Authentication and state hooks
-  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0(); // Ensure 'user' is destructured
+  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
+  const [recipientName, setRecipientName] = useState("Chat");
 
   // Fetch messages when the user is authenticated
   useEffect(() => {
@@ -42,8 +44,13 @@ export default function chat() {
 
       const data = await response.json();
       setMessages(data.messages || []);
+      
+      // Set recipient name if available
+      if (data.messages && data.messages[0] && data.messages[0].recipientName) {
+        setRecipientName(data.messages[0].recipientName);
+      }
+      
       setLoading(false);
-      console.log(data);
 
       // Mark conversation as read when opened
       await fetch(
@@ -94,8 +101,8 @@ export default function chat() {
             message: inputText,
             sentByUser: true,
             timestamp: new Date().toISOString(),
-            senderName: user?.name || user?.nickname || "You", // Add sender's name
-            profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff", // Add sender's profile picture
+            senderName: user?.name || user?.nickname || "You",
+            profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff",
           },
         ]);
 
@@ -107,73 +114,111 @@ export default function chat() {
     }
   };
 
-  return (
-    <>
-      {/* Navbar with a back button and recipient name */}
-      <nav className="sticky top-0 z-50 border-b bg-white">
-        <Navbar
-          className="sticky top-0 z-50"
-          iconLeft={<BackButton />}
-          header={messages[0]?.recipientName}
-        />
-      </nav>
+  // Back icon
+  const backIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+  );
 
-      {/* Message list */}
-      <div className="flex-1 overflow-y-auto pb-5">
+  return (
+    <div className="min-h-screen max-h-screen flex flex-col">
+      {/* Background decoration */}
+      <div className="bg-circle bg-circle-1"></div>
+      <div className="bg-circle bg-circle-2"></div>
+      
+      {/* Fixed height navbar */}
+      <div className="flex-none">
+        <GlassNavbar
+          title={recipientName}
+          leftIcon={backIcon}
+          onLeftIconClick={() => navigate("/messages")}
+        />
+      </div>
+      
+      {/* Scrollable message area - takes up all available space */}
+      <div className="flex-grow overflow-y-auto px-2 pb-24 pt-2">
         {loading ? (
-          <div className="text-center py-4">Loading messages...</div>
+          <div className="flex justify-center items-center h-48 text-white">
+            <div className="w-10 h-10 relative">
+              <div className="absolute inset-0 rounded-full bg-white opacity-25 animate-ping"></div>
+              <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white bg-opacity-30">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </div>
+            </div>
+          </div>
         ) : error ? (
-          <div className="text-center py-4 text-red-500">{error}</div>
+          <div className="glass-card bg-red-500 bg-opacity-25 mx-auto max-w-md">
+            <p className="text-white">Error: {error}</p>
+          </div>
         ) : messages.length > 0 ? (
-          messages.map((message, index) => (
-            <ChatBubble
-              key={message._id || index}
-              isSent={message.sentByUser}
-              message={message.message}
-              timestamp={message.timestamp}
-              username={message.senderName}
-              profilePic={
-                message.profilePic || "https://www.dummyimage.com/25x25/000/fff"
-              }
-            />
-          ))
+          <div className="space-y-3 max-w-md mx-auto">
+            {messages.map((message, index) => (
+              <GlassChatBubble
+                key={message._id || index}
+                isSent={message.sentByUser}
+                message={message.message}
+                timestamp={message.timestamp}
+                username={message.senderName}
+                profilePic={
+                  message.profilePic || "https://www.dummyimage.com/25x25/000/fff"
+                }
+              />
+            ))}
+          </div>
         ) : (
-          <div className="text-center py-4">
-            No messages yet. Start a conversation!
+          <div className="glass-card text-center mx-auto max-w-md">
+            <p className="text-white">No messages yet. Start a conversation!</p>
           </div>
         )}
       </div>
-
-      {/* Input field and send button */}
-      <footer className="fixed bottom-1 left-1 right-1 flex items-center justify-between px-4 py-3 border rounded-2xl z-50 bg-white">
-        <div className="flex-1 mx-2">
-          <input
-            type="text"
-            placeholder="Message..."
-            className="w-full focus:outline-none"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                sendMessage();
-              }
-            }}
-          />
-        </div>
-        <div className="text-right flex justify-center">
-          <button onClick={() => sendMessage()}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="24px"
-              viewBox="0 -960 960 960"
-              width="24px"
-              fill="#000000"
+      
+      {/* Fixed position input field */}
+      <div className="fixed bottom-16 left-0 right-0 px-4 z-50">
+        <div className="glass-card max-w-md mx-auto" style={{marginBottom: 0, padding: "8px 12px", animation: "none", opacity: 1, transform: "none"}}>
+          <div className="flex items-center">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              className="flex-1 bg-transparent border-none text-white placeholder-white placeholder-opacity-60 focus:outline-none"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  sendMessage();
+                }
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              className="glass-icon-button ml-2"
+              disabled={inputText.trim() === ""}
             >
-              <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z" />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20" height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
         </div>
-      </footer>
-    </>
+      </div>
+      
+      {/* Fixed height tab bar */}
+      <div className="flex-none">
+        <GlassTabBar />
+      </div>
+    </div>
   );
 }
