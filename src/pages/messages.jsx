@@ -14,13 +14,37 @@ export default function Messages() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userData, setUserData] = useState(null);
 
   // Fetch conversations when the user is authenticated
   useEffect(() => {
     if (isAuthenticated) {
+      fetchUserData();
       fetchConversations();
     }
   }, [isAuthenticated]);
+
+  // Function to fetch user data
+  const fetchUserData = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await fetch("http://localhost:3000/api/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setUserData(data);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setError(error.message);
+    }
+  };
 
   // Function to fetch conversations from the backend API
   const fetchConversations = async () => {
@@ -73,6 +97,7 @@ export default function Messages() {
 
   // Log the fetched conversations to the console for debugging
   console.log("Conversations:", conversations);
+  console.log("User data:", userData);
 
   // Render the messages page
   return (
@@ -102,16 +127,30 @@ export default function Messages() {
       <div className="flex flex-col items-center mt-5 gap-1 pb-20">
         {/* Display conversations if available */}
         {conversations.length > 0 ? (
-          conversations.map((convo) => (
-            <Link to={`/chat/${convo._id}`} key={convo._id} className="w-full">
-              <MessageCard
-                profilePic={convo.profilePic || "https://www.dummyimage.com/40x40/000/fff"}
-                username={convo.recipientName || "Unknown User"}
-                lastMessage={convo.lastMessage || "No messages yet"}
-                time={new Date(convo.timestamp).toLocaleString()}
-              />
-            </Link>
-          ))
+          conversations.map((convo) => {
+            // Only show as unread if the current user is not the sender
+            // (unread stays true if the current user didn't send the last message)
+            const isUserSender =
+              userData &&
+              convo.sender &&
+              convo.sender.toString() === userData._id.toString();
+            const shouldShowUnread = convo.unread && !isUserSender;
+
+            return (
+              <Link to={`/chat/${convo._id}`} key={convo._id} className="w-full">
+                <MessageCard
+                  profilePic={
+                    convo.profilePic ||
+                    "https://www.dummyimage.com/40x40/000/fff"
+                  }
+                  username={convo.recipientName || "Unknown User"}
+                  lastMessage={convo.lastMessage || "No messages yet"}
+                  time={new Date(convo.timestamp).toLocaleString()}
+                  unread={shouldShowUnread}
+                />
+              </Link>
+            );
+          })
         ) : (
           // Show a message if no conversations are available
           <div className="text-gray-500 p-4">No conversations yet</div>
