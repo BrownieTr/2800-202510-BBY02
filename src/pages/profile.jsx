@@ -99,6 +99,23 @@ export default function Profile() {
         );
     }
     
+    // Message icon
+    const messageIcon = (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    );
+    
     // Get display name from userData or Auth0 user
     const displayName = userData?.name
     || (user ? (user.name || user.nickname) : "Your Profile");
@@ -106,14 +123,20 @@ export default function Profile() {
     return (
         <div>
             {/* Background decoration */}
-            <div className="bg-circle bg-circle-1"></div>
-            <div className="bg-circle bg-circle-2"></div>
+            <div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] 
+            bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
+            </div>
+            <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px] 
+            bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
+            </div>
             
             <GlassNavbar
-                title="Profile"
+                title="Sports Betting"
                 leftIcon={backIcon}
-                rightIcon={notificationIcon}
+                rightIcon2={messageIcon}
                 onLeftIconClick={() => navigate("/home")}
+                onRightIconClick={() => navigate("/profile")}
+                onRightIcon2Click={() => navigate("/messages")}
             />
             
             <div className="app-container">

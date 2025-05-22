@@ -58,14 +58,14 @@ export default function Options({onOptionClick}) {
         <div className="glass-card">
             <h2 className="text-xl font-bold mb-4">Options</h2>
             
-            <div className="divide-y divide-white divide-opacity-10">
+            <div>
                 {options.map(option => (
                     <div
                         key={option.id}
-                        className="flex items-center py-4 cursor-pointer transition-all duration-300 hover:bg-white hover:bg-opacity-10 rounded-lg px-3"
+                        className="flex items-center py-2 cursor-pointer transition-all duration-300 border hover:bg-black hover:bg-opacity-30 rounded-lg px-3 transition duration-300 ease-in-out hover:bg-opacity-20 hover:scale-105"
                         onClick={() => handleClick(option.id)}
                     >
-                        <div className="w-10 h-10 flex items-center justify-center bg-white bg-opacity-10 rounded-full mr-4">
+                        <div className="w-10 h-10 flex items-center justify-center bg-opacity-10 rounded-full mr-4">
                             {option.icon}
                         </div>
                         <h3 className="text-white text-lg font-medium">
