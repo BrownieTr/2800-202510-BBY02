@@ -28,7 +28,7 @@ export async function currentLocation() {
  * Since distance should be small, the difference between calculated and actual distance 
  * should be small as well
  */
-export function calculateDistance(lat1, lon1, lat2, lon2) {
+export default function calculateDistance(lat1, lon1, lat2, lon2) {
   lat1 = parseFloat(lat1)
   lon1 = parseFloat(lon1)
   lat2 = parseFloat(lat2)
