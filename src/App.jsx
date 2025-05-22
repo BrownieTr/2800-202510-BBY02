@@ -11,6 +11,7 @@ import Messages from "./pages/messages";
 import CreateEvent from "./pages/createEvent";
 import FavSport from "./pages/favSport";
 import FindingMatch from "./pages/findingMatch";
+import MatchPreferences from "./pages/MatchPreferences";
 import SportsBetting from "./pages/sportsBetting";
 import Index from "./pages/index";
 import NewChat from "./pages/newChat";
@@ -98,7 +99,23 @@ function App() {
           }
         />
         <Route
-          path="/findingMatch"
+          path="/match-preferences"
+          element={
+            <ProtectedRoute>
+              <MatchPreferences />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/finding-match"
+          element={
+            <ProtectedRoute>
+              <FindingMatch />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/match"
           element={
             <ProtectedRoute>
               <FindingMatch />

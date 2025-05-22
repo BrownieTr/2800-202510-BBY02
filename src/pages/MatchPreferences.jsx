@@ -33,9 +33,29 @@ export default function MatchPreferences() {
   // Handle form submission
 const handleSubmit = async (e) => {
   e.preventDefault();
-  const [latitude, longitude] = await currentLocation()
   setIsLoading(true);
+  setError(null);
+  
   try {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      await loginWithRedirect();
+      return;
+    }
+    
+    // Get current location
+    let latitude, longitude;
+    try {
+      [latitude, longitude] = await currentLocation();
+      console.log("Location obtained:", latitude, longitude);
+    } catch (locationError) {
+      console.error("Location error:", locationError);
+      setError("Unable to get your location. Please check your browser permissions.");
+      setIsLoading(false);
+      return;
+    }
+    
+    // Save preferences
     const success = await saveMatchPreferences(
       preferences.sport,
       parseInt(preferences.distance),
@@ -50,6 +70,8 @@ const handleSubmit = async (e) => {
     if (success) {
       // Navigate to FindingMatch with preferences
       navigate("/finding-match", { state: preferences });
+    } else {
+      setError("Failed to save preferences. Please try again.");
     }
   } catch (error) {
     console.error("Error:", error);
@@ -159,13 +181,13 @@ const handleSubmit = async (e) => {
           
           {/* Submit Button */}
           <div className="flex items-center justify-center">
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isLoading ? 'Finding...' : 'Find Match'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

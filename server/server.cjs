@@ -1,7 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const connect = require('./databaseConnection.cjs')
-const { calculateDistance } = require('../src/services/locationService.jsx')
+const calculateDistance = require('../src/services/locationService.jsx')
 const express = require('express');
 const cors = require('cors');
 const app = express();
