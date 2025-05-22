@@ -44,6 +44,17 @@ export default function chat() {
       setMessages(data.messages || []);
       setLoading(false);
       console.log(data);
+
+      // Mark conversation as read when opened
+      await fetch(
+        `http://localhost:3000/api/conversations/${conversationID}/read`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
     } catch (error) {
       console.error("Error fetching messages:", error);
       setError(error.message);
