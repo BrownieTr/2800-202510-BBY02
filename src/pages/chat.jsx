@@ -7,40 +7,20 @@ import GlassTabBar from "../components/layout/glassTabBar";
 
 export default function Chat() {
   // Authentication and state hooks
-  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0();
-  const navigate = useNavigate();
+  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0(); // Ensure 'user' is destructured
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
-  const [recipientName, setRecipientName] = useState("Chat");
-  const [isNewConversation, setIsNewConversation] = useState(false);
-  
-  // Check for stored chat information from MatchDetails and fetch messages
-  useEffect(() => {
-    const storedChatInfo = localStorage.getItem("currentChatInfo");
-    if (storedChatInfo) {
-      try {
-        const chatInfo = JSON.parse(storedChatInfo);
-        console.log("Found stored chat info:", chatInfo);
-        
-        if (chatInfo.partnerName) {
-          setRecipientName(chatInfo.partnerName);
-        }
-        
-        // Clear the stored chat info after using it
-        localStorage.removeItem("currentChatInfo");
-      } catch (e) {
-        console.error("Error parsing stored chat info:", e);
-      }
-    }
 
-    // Always try to fetch messages if authenticated
+  // Fetch messages when the user is authenticated
+  useEffect(() => {
     if (isAuthenticated) {
+      fetchCurrentUser();
       fetchMessages();
     }
-  }, [isAuthenticated, conversationID]);
+  }, [isAuthenticated]);
 
   /**
    * Fetches messages for the current conversation from the API.
@@ -60,44 +40,11 @@ export default function Chat() {
       );
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        
-        // Try to parse error response
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.error) {
-            throw new Error(errorData.error);
-          }
-        } catch (e) {
-          // If parsing fails, use generic error
-          throw new Error(`Failed to load messages: ${response.status}`);
-        }
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Messages loaded:", data);
-      
-      if (data.messages && data.messages.length > 0) {
-        setMessages(data.messages);
-        
-        // Set recipient name if available
-        if (data.messages[0].recipientName) {
-          setRecipientName(data.messages[0].recipientName);
-        }
-      } else {
-        // Initialize with a welcome message for empty conversations
-        setMessages([{
-          _id: 'welcome_msg',
-          message: "Start your conversation by sending a message!",
-          sentByUser: false,
-          timestamp: new Date().toISOString(),
-          senderName: 'PlayPal',
-          profilePic: null,
-          isSystemMessage: true
-        }]);
-      }
-      
+      setMessages(data.messages || []);
       setLoading(false);
 
       // Mark conversation as read
@@ -220,36 +167,22 @@ export default function Chat() {
 
         const data = await response.json();
 
-        // Update the temporary message with the real message ID
-        setMessages(prevMessages =>
-          prevMessages.map(msg =>
-            msg._id === tempMessageId
-              ? {
-                  ...msg,
-                  _id: data._id || msg._id,
-                  isPending: false
-                }
-              : msg
-          )
-        );
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            _id: data._id,
+            message: inputText,
+            sentByUser: true,
+            timestamp: new Date().toISOString(),
+            senderName: user?.name || user?.nickname || "You", // Add sender's name
+            profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff", // Add sender's profile picture
+          },
+        ]);
+
+        setInputText("");
       } catch (error) {
         console.error("Error sending message:", error);
-        
-        // Show a more friendly error
-        const errorMessage = "Message couldn't be sent to server. It's saved locally.";
-        setError(errorMessage);
-        
-        // Mark message as sent locally but with warning
-        setMessages(prevMessages =>
-          prevMessages.map(msg =>
-            msg._id === tempMessageId
-              ? { ...msg, isPending: false, isLocalOnly: true }
-              : msg
-          )
-        );
-        
-        // Switch to local-only mode for future messages
-        setIsNewConversation(true);
+        setError(error.message);
       }
     }
   };
@@ -263,17 +196,13 @@ export default function Chat() {
   );
 
   return (
-    <div className="min-h-screen max-h-screen flex flex-col">
-      {/* Background decoration */}
-      <div className="bg-circle bg-circle-1"></div>
-      <div className="bg-circle bg-circle-2"></div>
-      
-      {/* Fixed height navbar */}
-      <div className="flex-none">
-        <GlassNavbar
-          title={recipientName}
-          leftIcon={backIcon}
-          onLeftIconClick={() => navigate("/messages")}
+    <>
+      {/* Navbar with a back button and recipient name */}
+      <nav className="sticky top-0 z-50 border-b bg-white">
+        <Navbar
+          className="sticky top-0 z-50"
+          iconLeft={<BackButton />}
+          header={messages[0]?.recipientName}
         />
       </div>
       

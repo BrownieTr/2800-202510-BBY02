@@ -26,7 +26,12 @@ export default function Navbar({
         ) : (
           <ClickableIcons icon={iconRight} to={iconRightTo} />
         )}
-        <Button className="ml-2" onClick={iconRight2To}> {iconRight2} </Button>
+
+        {iconRight2 ? (
+          <Button className="ml-2" onClick={iconRight2To}> {iconRight2} </Button>
+        ) : (
+          <ClickableIcons icon={iconRight2} to={iconRight2To} />
+        )}
     </nav>
   );
 }

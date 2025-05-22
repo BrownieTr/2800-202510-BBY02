@@ -5,7 +5,7 @@ export default function messageCard({
   username = "username",
   time,
   lastMessage,
-  unread = true,
+  unread = false,
   profilePic = "https://www.dummyimage.com/50x50/000/fff",
 }) {
   return (
