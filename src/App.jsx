@@ -3,7 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import "./styles/App.css";
 import Landing from "./pages/landing";
 import Profile from "./pages/profile";
-import Location from "./services/locationService";
+// import Location from "./services/locationService";
 import Event from "./pages/events";
 import Chat from "./pages/chat";
 import ProtectedRoute from "./services/protectedRoutes";
