@@ -14,6 +14,7 @@ import FindingMatch from "./pages/findingMatch";
 import SportsBetting from "./pages/sportsBetting";
 import Index from "./pages/index";
 import NewChat from "./pages/newChat";
+import SetUpProfile from "./pages/setUpProfile";
 
 function App() {
   const { isLoading } = useAuth0();
@@ -112,6 +113,14 @@ function App() {
           element={
             <ProtectedRoute>
               <NewChat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/setUpProfile"
+          element={
+            <ProtectedRoute>
+              <SetUpProfile />
             </ProtectedRoute>
           }
         />

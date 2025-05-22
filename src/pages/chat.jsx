@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import ChatBubble from "../components/ui/chatBubble";
 import Navbar from "../components/layout/navbar";
 import BackButton from "../components/ui/backButton";
@@ -6,20 +6,24 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useParams } from "react-router-dom";
 
 export default function chat() {
-  const { isAuthenticated, isLoading, getAccessTokenSilently } =
-    useAuth0();
+  // Authentication and state hooks
+  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0(); // Ensure 'user' is destructured
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
 
+  // Fetch messages when the user is authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchMessages();
     }
   }, [isAuthenticated]);
 
+  /**
+   * Fetches messages for the current conversation from the API.
+   */
   const fetchMessages = async () => {
     try {
       const token = await getAccessTokenSilently();
@@ -47,6 +51,9 @@ export default function chat() {
     }
   };
 
+  /**
+   * Sends a new message to the API and updates the local message list.
+   */
   const sendMessage = async () => {
     if (inputText.trim() !== "") {
       try {
@@ -76,6 +83,8 @@ export default function chat() {
             message: inputText,
             sentByUser: true,
             timestamp: new Date().toISOString(),
+            senderName: user?.name || user?.nickname || "You", // Add sender's name
+            profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff", // Add sender's profile picture
           },
         ]);
 
@@ -89,6 +98,7 @@ export default function chat() {
 
   return (
     <>
+      {/* Navbar with a back button and recipient name */}
       <nav className="sticky top-0 z-50 border-b bg-white">
         <Navbar
           className="sticky top-0 z-50"
@@ -96,6 +106,8 @@ export default function chat() {
           header={messages[0]?.recipientName}
         />
       </nav>
+
+      {/* Message list */}
       <div className="flex-1 overflow-y-auto pb-5">
         {loading ? (
           <div className="text-center py-4">Loading messages...</div>
@@ -109,6 +121,9 @@ export default function chat() {
               message={message.message}
               timestamp={message.timestamp}
               username={message.senderName}
+              profilePic={
+                message.profilePic || "https://www.dummyimage.com/25x25/000/fff"
+              }
             />
           ))
         ) : (
@@ -117,6 +132,8 @@ export default function chat() {
           </div>
         )}
       </div>
+
+      {/* Input field and send button */}
       <footer className="fixed bottom-1 left-1 right-1 flex items-center justify-between px-4 py-3 border rounded-2xl z-50 bg-white">
         <div className="flex-1 mx-2">
           <input

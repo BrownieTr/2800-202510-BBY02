@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
+const { profile } = require('console');
 
 app.use(cors());
 app.use(express.json());
@@ -66,7 +67,9 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
         address: "Not set",
         country: "Not set",
         preferences: "Not set",
-        createdAt: new Date()
+        createdAt: new Date(),
+        setUp: false,
+        profilePic: ""
       };
 
       console.log("About to insert user:", user);
@@ -92,7 +95,7 @@ app.post('/api/profile/update', jwtCheck, async (req, res) => {
     const auth0Id = req.auth.payload.sub;
 
     // Get data from request
-    const { name, address, country, preferences } = req.body;
+    const { name, address, country, preferences, setUp, profilePic, email } = req.body;
 
     let db = connect.db();
 
@@ -101,7 +104,7 @@ app.post('/api/profile/update', jwtCheck, async (req, res) => {
       { auth0Id: auth0Id },
       {
         $set: {
-          name, address, country, preferences,
+          name, address, country, preferences, setUp, profilePic, email,
           updatedAt: new Date()
         }
       }
@@ -381,7 +384,8 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
         recipientId: otherParticipantId,
         recipientName: recipient ? recipient.name : 'Unknown User',
         lastMessage: convo.lastMessage || "",
-        timestamp: convo.lastMessageDate || convo.createdAt || new Date()
+        timestamp: convo.lastMessageDate || convo.createdAt || new Date(),
+        profilePic: recipient ? recipient.profilePic : "https://www.dummyimage.com/40x40/000/fff",
       };
     }));
 
@@ -552,7 +556,8 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
         message: msg.content,
         timestamp: msg.sentAt || new Date(),
         sentByUser: sentByUser,
-        recipientName: recipientName ? recipientName.name : 'Unknown User'
+        recipientName: recipientName ? recipientName.name : 'Unknown User',
+        profilePic: sender.profilePic || "https://www.dummyimage.com/25x25/000/fff"
       }
     }));
 
@@ -641,7 +646,7 @@ app.get('/api/users/search', jwtCheck, async (req, res) => {
       .project({
         _id: 1,
         name: 1,
-        // Include other fields you want to display in search results
+        profilePic: "https://www.dummyimage.com/40x40/000/fff",
       })
       .limit(5)  // Limit results for performance
       .toArray();
@@ -849,6 +854,7 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{
 
 //Winner is either 1 or 2: 1 for team1 winning and vice versa
 //Team1 Pool and Team2Pool can be got from bettingDetails. 
+/** 
 app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
   try{
     const betId = req.params.betId
@@ -875,7 +881,7 @@ app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
     res.status(500).json({ error: 'Server error', message: error.message });
   }
 })
-
+*/
 app.listen(PORT, async () => {
   try {
     await connect.connect();
