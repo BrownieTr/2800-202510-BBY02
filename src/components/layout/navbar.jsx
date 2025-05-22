@@ -15,18 +15,18 @@ export default function Navbar({
 }) {
   return (
     <nav className="flex items-center justify-between py-4">
-      <div>
+      <div className="flex items-center">
         <ClickableIcons icon={iconLeft} to={iconLeftTo} />
       </div>
       <div className="flex-1 text-left">
         <p className="font-bold text-2xl">{header}</p>
       </div>
-      <div className="w-10 text-right">
-        <ClickableIcons icon={iconRight} to={iconRightTo} />
-      </div>
-      <div className="text-right">
-        <Button onClick={iconRight2To}> {iconRight2} </Button>
-      </div>
+        {iconRight ? (
+          <Button onClick={iconRightTo}>{iconRight}</Button>
+        ) : (
+          <ClickableIcons icon={iconRight} to={iconRightTo} />
+        )}
+        <Button className="ml-2" onClick={iconRight2To}> {iconRight2} </Button>
     </nav>
   );
 }

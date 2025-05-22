@@ -17,10 +17,10 @@ const LogoutPopUp = ({onOptionClick}) => {
 
     <div className="flex justify-center gap-4">
       <Button 
-        className="bg-blue-600 hover:bg-blue-700" 
+        className="text-white bg-blue-600 hover:bg-blue-700" 
         onClick={() => handleClick(0)}>Cancel</Button>
       <Button
-        className="bg-red-600 hover:bg-red-700"
+        className="text-white bg-red-600 hover:bg-red-700"
         onClick={() =>
           logout({
             logoutParams: { returnTo: window.location.origin },

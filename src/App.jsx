@@ -15,9 +15,10 @@ import SportsBetting from "./pages/sportsBetting";
 import Index from "./pages/index";
 import NewChat from "./pages/newChat";
 import SetUpProfile from "./pages/setUpProfile";
+import { Navigate } from "react-router-dom";
 
 function App() {
-  const { isLoading } = useAuth0();
+  const { isLoading, isAuthenticated } = useAuth0();
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -26,7 +27,11 @@ function App() {
   return (
       <Routes>
         {/* Public routes */}``
-        <Route path="/" element={<Landing />} />
+        <Route path="/" 
+                element={
+          isAuthenticated ? <Navigate to="/home" /> : <Landing />
+        }
+        />
         {/* Protected routes - require authentication */}
         <Route
           path="/profile"

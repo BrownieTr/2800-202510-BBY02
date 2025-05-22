@@ -82,10 +82,10 @@ export default function Profile_Details({ onButtonClick, userData, onProfileUpda
           </div>
 
           <div className="flex justify-end gap-4 flex-wrap">
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleButtonClick(0)}>
+            <Button className="text-white bg-blue-600 hover:bg-blue-700" onClick={() => handleButtonClick(0)}>
               Back
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleButtonClick(100)}>
+            <Button className="text-white bg-blue-600 hover:bg-blue-700" onClick={() => handleButtonClick(100)}>
               Edit
             </Button>
           </div>
