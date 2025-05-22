@@ -1,7 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const connect = require('./databaseConnection.cjs')
-const calculateDistance = require('../src/services/locationService.jsx')
+// const calculateDistance = require('../src/services/locationService.jsx')
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -11,6 +11,41 @@ const { MongoClient, ObjectId } = require('mongodb');
 const { profile } = require('console');
 const { send } = require('process');
 const { use } = require('react');
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  // Convert all inputs to numbers
+  lat1 = parseFloat(lat1);
+  lon1 = parseFloat(lon1);
+  lat2 = parseFloat(lat2);
+  lon2 = parseFloat(lon2);
+  
+  // Convert degrees to radians
+  const lat1Rad = lat1 * Math.PI/180;
+  const lon1Rad = lon1 * Math.PI/180;
+  const lat2Rad = lat2 * Math.PI/180;
+  const lon2Rad = lon2 * Math.PI/180;
+  
+  // Calculate deltas
+  const latDelta = lat2Rad - lat1Rad;
+  const lonDelta = lon2Rad - lon1Rad;
+  
+  // Haversine formula (already in radians)
+  const a = Math.sin(latDelta/2) * Math.sin(latDelta/2) +
+            Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+            Math.sin(lonDelta/2) * Math.sin(lonDelta/2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  
+  /**
+   * Average radius of earth, since radius at equator and radius at the poles differ
+   * @see https://en.wikipedia.org/wiki/Earth_radius
+   */
+  const radius = 6371.2;
+  
+  // Calculate the distance
+  const distance = radius * c;
+  return distance;
+}
 
 app.use(cors());
 app.use(express.json());
