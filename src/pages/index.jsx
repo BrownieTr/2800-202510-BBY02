@@ -14,12 +14,15 @@ export default function Index() {
   const [error, setError] = useState(null);
   const [matches, setMatches] = useState([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+  const [userEvents, setUserEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchUser();
       fetchUserMatches();
+      fetchUserEvents();
     }
   }, [isAuthenticated]);
 
@@ -34,6 +37,49 @@ export default function Index() {
       console.error("Error fetching user matches:", error);
     } finally {
       setIsLoadingMatches(false);
+    }
+  };
+
+  // CHANGED: Fetch latest event from database
+  const fetchUserEvents = async () => {
+    try {
+      setIsLoadingEvents(true);
+      const token = await getAccessTokenSilently();
+      
+      // Get all events
+      const eventsResponse = await fetch('/api/events', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!eventsResponse.ok) {
+        throw new Error('Failed to fetch events');
+      }
+      
+      const eventsData = await eventsResponse.json();
+      const allEvents = eventsData.events || [];
+      
+      if (allEvents.length > 0) {
+        // Sort events by creation date (newest first) and get the latest one
+        const sortedEvents = allEvents.sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.date);
+          const dateB = new Date(b.createdAt || b.date);
+          return dateB - dateA; // Newest first
+        });
+        
+        // Take the latest event
+        const latestEvent = sortedEvents[0];
+        console.log("Latest event:", latestEvent);
+        setUserEvents([latestEvent]); // Set as array with single latest event
+      } else {
+        setUserEvents([]);
+      }
+      
+    } catch (error) {
+      console.error("Error fetching latest event:", error);
+    } finally {
+      setIsLoadingEvents(false);
     }
   };
 
@@ -59,6 +105,32 @@ export default function Index() {
     } catch (error) {
       console.error("Error fetching messages:", error);
       setError(error.message);
+    }
+  };
+
+  // Handle joining an event
+  const handleJoinEvent = async (eventId) => {
+    try {
+      const token = await getAccessTokenSilently();
+      
+      const response = await fetch(`/api/events/${eventId}/join`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to join event');
+      }
+      
+      // Refresh the events list
+      fetchUserEvents();
+      
+      alert("You've joined the event!");
+    } catch (error) {
+      console.error("Error joining event:", error);
+      alert("Failed to join event. Please try again.");
     }
   };
 
@@ -100,8 +172,8 @@ export default function Index() {
   return (
     <div>
       {/* Background decoration */}
-<div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none"></div>
-<div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px] bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none"></div>
+      <div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none"></div>
+      <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px] bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none"></div>
 
       
       <GlassNavbar
@@ -178,16 +250,54 @@ export default function Index() {
             )}
           </div>
           
-          {/* Featured betting card */}
-          <h2 className="text-xl font-bold text-white mb-4">Featured Game</h2>
-          <GlassBettingCard
-            setting="Today, 8:00 PM • Local Arena"
-            team1="Lakers"
-            team2="Warriors"
-            odds1="1.85"
-            odds2="2.50"
-            odds3="1.95"
-          />
+          {/* CHANGED: Latest Event from Database */}
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Latest Event</h2>
+            
+            {isLoadingEvents ? (
+              <div className="text-center text-white p-4">
+                <div className="w-8 h-8 mx-auto mb-2 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                <p>Loading latest event...</p>
+              </div>
+            ) : userEvents && userEvents.length > 0 ? (
+              <div className="space-y-4">
+                {userEvents.map((event, index) => (
+                  <GlassEventCard
+                    key={event._id || index}
+                    title={event.name}
+                    description={event.description}
+                    date={event.date}
+                    time={event.time}
+                    location={event.location}
+                    participants={`${event.participants?.length || 0} participants`}
+                    onJoin={() => handleJoinEvent(event._id)}
+                  />
+                ))}
+                
+                <div className="text-center">
+                  <GlassButton
+                    className="px-6 py-2"
+                    onClick={() => navigate("/events")}
+                  >
+                    View All Events
+                  </GlassButton>
+                </div>
+              </div>
+            ) : (
+              <div className="glass-card text-center p-4">
+                <p className="text-white mb-2">No events available</p>
+                <p className="text-white opacity-70 text-sm mb-4">
+                  Be the first to create an event in your community!
+                </p>
+                <GlassButton
+                  className="w-full py-3"
+                  onClick={() => navigate("/createEvent")}
+                >
+                  Create Event
+                </GlassButton>
+              </div>
+            )}
+          </div>
           
           {/* Main features */}
           <div className="feature-grid">
