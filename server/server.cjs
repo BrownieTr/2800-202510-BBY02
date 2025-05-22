@@ -11,6 +11,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const { profile } = require('console');
 const { send } = require('process');
 const { use } = require('react');
+const { receiveMessageOnPort } = require('worker_threads');
 
 app.use(cors());
 app.use(express.json());
@@ -227,8 +228,8 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
 
     const user1 = myPreferences;
     const user2 = potentialMatch;
-    console.log("USER 1: ",  user1)
-    console.log("USER 2: ",  user2)
+    console.log("USER 1: ", user1)
+    console.log("USER 2: ", user2)
     const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, potentialMatch.latitude, potentialMatch.longitude);
 
     // Create the match
@@ -505,41 +506,49 @@ app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
   }
 });
 
+// Get all messages for a specific conversation
 app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
   try {
+    // Get Auth0 user ID from JWT token
     const auth0ID = req.auth.payload?.sub;
 
+    // If no Auth0 ID, return error
     if (!auth0ID) {
       return res.status(400).json({ error: 'Auth0 ID not found in token' });
     }
 
+    // Get database connection and current user
     let db = connect.db();
     let user = await db.collection('users').findOne({ auth0Id: auth0ID });
     let conversationID;
-    console.log(user)
 
+    // Validate conversation ID format
     try {
       conversationID = new ObjectId(req.params.conversationID);
     } catch (error) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
     }
 
+    // Find the conversation by ID
     let conversation = await db.collection('conversations').findOne({
       _id: conversationID
     });
 
+    // Find the recipient's user object (the other participant)
     let recipientName = await db.collection('users').findOne({
       _id: { $in: conversation.participants.filter(id => id.toString() !== user._id.toString()) }
     });
 
+    // If user not found, return error
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    // Get all messages for this conversation
     let messages = await db.collection('messages').find({
       conversationID: conversationID
     }).toArray();
-
-    console.log("Messages found: ", messages);
+    // Enhance each message with sender/recipient info and sentByUser flag
     const enhancedMessages = await Promise.all(messages.map(async (msg) => {
       // Find the sender ID
       const senderID = msg.senderID;
@@ -549,10 +558,10 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
 
       let sentByUser = false;
 
+      // Check if the current user sent this message
       if (user._id.toString() == senderID.toString()) {
         sentByUser = true;
       }
-
       return {
         _id: msg._id,
         senderId: senderID,
@@ -565,6 +574,14 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
       }
     }));
 
+    //New conversation
+    if (enhancedMessages.length === 0) {
+      return res.json({
+        recipientName: recipientName ? recipientName.name : 'Unknown User',
+      });
+    }
+
+    // Return all enhanced messages
     res.json({ messages: enhancedMessages });
   } catch (error) {
     console.error("Error:", error);
@@ -653,12 +670,11 @@ app.get('/api/users/search', jwtCheck, async (req, res) => {
       .project({
         _id: 1,
         name: 1,
-        profilePic: "https://www.dummyimage.com/40x40/000/fff",
+        profilePic: 1,
       })
-      .limit(5)  // Limit results for performance
+      .limit(5)
       .toArray();
 
-    console.log(`Found ${users.length} users matching "${searchQuery}"`);
     res.json({ users });
   } catch (error) {
     console.error('Error searching users:', error);
@@ -729,27 +745,27 @@ app.post('/api/conversations/create', jwtCheck, async (req, res) => {
 //userID: Person who sets up bet is the only person who can close the bet, probably event owner. 
 //Team1Name: Name of team 1
 //team2Name: Name of team 2
-app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
-  try{
+app.post('/api/bets/makePool', jwtCheck, async (req, res) => {
+  try {
     const { team1Name, team2Name } = req.body;
     const db = connect.db();
 
     const insertData = {
       team1Name: team1Name,
-      team2Name: team2Name, 
+      team2Name: team2Name,
       team1Betters: [],
       team2Betters: [],
       pot: 0,
       timestamp: new Date()
     }
-  
+
     //add to collection
     const insertResults = await db.collection('bets').insertOne(insertData);
-  
-    res.json({success: true, bettingId: insertResults.insertedId})
+
+    res.json({ success: true, bettingId: insertResults.insertedId })
     //return betting id
 
-  } catch(error) {
+  } catch (error) {
     console.error("Error:", error);
     console.error(error.stack);
     res.status(500).json({ error: 'Server error', message: error.message });
@@ -761,51 +777,51 @@ app.post('/api/bets/makePool', jwtCheck, async(req,res) => {
 //
 // betAmount is the amount the user is betting
 //team to bet is the team the user is betting on, either 1 or 2
-app.post('/api/bets/makeBet/:betId', jwtCheck, async(req,res) => {
-  try{ 
-    const {userId, name, betAmount, teamToBet} = req.body;
+app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
+  try {
+    const { userId, name, betAmount, teamToBet } = req.body;
     const betId = req.params.betId;
     const db = connect.db();
 
     const insertData = {
-      userId: userId, 
+      userId: userId,
       bet: betAmount,
       name: name
     }
-    
-    if (teamToBet == 1) {
-    const result = await db.collection('bets').updateOne(
-      {_id: new ObjectId(betId)},
-      {
-        $addToSet: {
-          team1Betters: insertData
-        },
-        $inc : {
-          pot: betAmount
-        }
-      }
-    )
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Betting pool not found' });
-    }
 
-    return res.json({success: true})
-    } else if(backingTeam == 2) {
-    const result = await db.collection('bets').updateOne(
-      {_id: new ObjectId(betId)},
-      {
-        $addToSet: {
-          team2Betters: insertData
-        },
-        $inc : {
-          pot: betAmount
+    if (teamToBet == 1) {
+      const result = await db.collection('bets').updateOne(
+        { _id: new ObjectId(betId) },
+        {
+          $addToSet: {
+            team1Betters: insertData
+          },
+          $inc: {
+            pot: betAmount
+          }
         }
+      )
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: 'Betting pool not found' });
       }
-    )
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Betting pool not found' });
-    }
-    return res.json({success: true})
+
+      return res.json({ success: true })
+    } else if (backingTeam == 2) {
+      const result = await db.collection('bets').updateOne(
+        { _id: new ObjectId(betId) },
+        {
+          $addToSet: {
+            team2Betters: insertData
+          },
+          $inc: {
+            pot: betAmount
+          }
+        }
+      )
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: 'Betting pool not found' });
+      }
+      return res.json({ success: true })
     }
 
   } catch (error) {
@@ -815,30 +831,30 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async(req,res) => {
   }
 })
 
-app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{ 
-  try{
+app.get('/api/bets/bettingDetails/:betId', jwtCheck, async (req, res) => {
+  try {
     const betId = req.params.betId
-  
-    let bet = await db.collection('bets').findOne({_id: new ObjectId(betId)});
 
-    if(!bet) {
-      return res.status(404).json({success: false, error: "Betting pool not found"})
+    let bet = await db.collection('bets').findOne({ _id: new ObjectId(betId) });
+
+    if (!bet) {
+      return res.status(404).json({ success: false, error: "Betting pool not found" })
     }
-  
+
     let team1Pool = 0;
     let team1Names = []
-    for(let i = 0; i < bet.team1Betters.length; i++) {
+    for (let i = 0; i < bet.team1Betters.length; i++) {
       team1Names.push(bet.team1Betters[i].name);
       team1Pool += bet.team1Betters[i].bet;
     }
     let team2Pool = 0;
     let team2Names = [];
-    for(let i = 0; i < bet.team2Betters.length; i++) {
+    for (let i = 0; i < bet.team2Betters.length; i++) {
       team2Names.push(bet.team2Betters[i].name);
       team2Pool += bet.team2Betters[i].bet;
     }
-  
-     const toSend = {
+
+    const toSend = {
       team1Name: bet.team1Name,
       team2Name: bet.team2Name,
       team1Betters: team1Names,
@@ -847,9 +863,9 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async(req,res) =>{
       team2Pool: team2Pool,
       team1Odds: ((bet.pot / team1Pool) * 100),
       team2Odds: ((bet.pot / team2Pool) * 100)
-     }
-  
-     res.json({success: true, data: toSend})
+    }
+
+    res.json({ success: true, data: toSend })
 
   } catch (error) {
     console.error("Error:", error);
@@ -909,15 +925,15 @@ app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) =>
 
     // Update the conversation to mark as read only if the current user is not the sender
     const result = await db.collection('conversations').updateOne(
-      { 
+      {
         _id: new ObjectId(conversationID),
         participants: { $in: [user._id] },
         sender: { $ne: user._id } // Only mark as read if current user is not the sender
       },
-      { 
-        $set: { 
+      {
+        $set: {
           unread: false,
-        } 
+        }
       }
     );
 

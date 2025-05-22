@@ -14,14 +14,22 @@ export default function chat() {
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
   const [user, setUser] = useState([]);
+  const [recipientName, setRecipientName] = useState("");
 
   // Fetch messages when the user is authenticated
   useEffect(() => {
+    let intervalId;
     if (isAuthenticated) {
       fetchCurrentUser();
       fetchMessages();
+      // Poll for new messages every 5 seconds
+      intervalId = setInterval(() => {
+        fetchMessages();
+      }, 5000);
     }
-  }, [isAuthenticated]);
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated, conversationID]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -58,13 +66,18 @@ export default function chat() {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`Can't find conversation! Status: ${response.status}`);
       }
 
       const data = await response.json();
       setMessages(data.messages || []);
+      // If messages is empty, set recipientName from data
+      if ((!data.messages || data.messages.length === 0) && data.recipientName) {
+        setRecipientName(data.recipientName);
+      } else if (data.messages && data.messages.length > 0) {
+        setRecipientName(data.messages[0].recipientName);
+      }
       setLoading(false);
-      console.log(data);
 
       // Mark conversation as read when opened
       await fetch(
@@ -123,7 +136,6 @@ export default function chat() {
 
         setInputText("");
       } catch (error) {
-        console.error("Error sending message:", error);
         setError(error.message);
       }
     }
@@ -136,7 +148,7 @@ export default function chat() {
         <Navbar
           className="sticky top-0 z-50"
           iconLeft={<BackButton />}
-          header={messages[0]?.recipientName}
+          header={messages.length > 0 ? messages[0].recipientName : recipientName}
         />
       </nav>
 

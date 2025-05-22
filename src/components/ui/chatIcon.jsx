@@ -41,7 +41,6 @@ export default function ChatIcon() {
       // Check if any conversation has unread messages not sent by current user
       const hasUnreadMessages = conversations.forEach((element) => {
         if (element.sender !== user._id && element.unread) {
-          console.log("Unread message found:", element);
           setHasUnread(true);
         }
       });
