@@ -8,10 +8,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
-const { profile } = require('console');
-const { send } = require('process');
-const { use } = require('react');
-const { receiveMessageOnPort } = require('worker_threads');
 
 app.use(cors());
 app.use(express.json());
@@ -26,7 +22,6 @@ const jwtCheck = auth({
 
 app.use(jwtCheck);
 
-
 app.get('/users', async (req, res) => {
   let db = connect.db();
   let data = await db.collection('users').find({}).toArray();
@@ -35,10 +30,8 @@ app.get('/users', async (req, res) => {
 
 app.get('/api/profile', jwtCheck, async (req, res) => {
   try {
-    // Log the entire auth object
     console.log("Full Auth0 token payload:", req.auth);
 
-    // Access sub from within the payload object
     const auth0Id = req.auth.payload?.sub;
     console.log("Auth0 ID extracted:", auth0Id);
 
@@ -51,21 +44,15 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
 
     let db = connect.db();
 
-    // Find user by Auth0 ID
     let user = await db.collection('users').findOne({ auth0Id: auth0Id });
     console.log("User found in DB:", user ? "Yes" : "No");
 
-    // If user doesn't exist, create a new one
     if (!user) {
       console.log("Creating new user for Auth0 ID:", auth0Id);
 
-      // Get user info from Auth0 userinfo endpoint
-      // Since we don't have user details in the token, we'll use a default name for now
-      // and update it later if needed
-
       user = {
         auth0Id: auth0Id,
-        name: "New User",  // Default name
+        name: "New User",
         email: "No email available",
         address: "Not set",
         country: "Not set",
@@ -77,7 +64,6 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
 
       console.log("About to insert user:", user);
 
-      // Save to database
       const result = await db.collection('users').insertOne(user);
       console.log("Insert result:", result);
     } else {
@@ -91,18 +77,13 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
   }
 });
 
-// Example: Update profile
 app.post('/api/profile/update', jwtCheck, async (req, res) => {
   try {
-    // Get Auth0 ID from token
     const auth0Id = req.auth.payload.sub;
-
-    // Get data from request
     const { name, address, country, preferences, setUp, profilePic, email } = req.body;
 
     let db = connect.db();
 
-    // Update user by Auth0 ID
     const result = await db.collection('users').updateOne(
       { auth0Id: auth0Id },
       {
@@ -117,7 +98,6 @@ app.post('/api/profile/update', jwtCheck, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get updated user
     const updatedUser = await db.collection('users').findOne({ auth0Id: auth0Id });
     res.json(updatedUser);
   } catch (error) {
@@ -127,35 +107,27 @@ app.post('/api/profile/update', jwtCheck, async (req, res) => {
 });
 
 // Matchmaking Routes
-
 app.post('/api/matchmaking/save-preferences', jwtCheck, async (req, res) => {
   try {
-    // Log the request
     console.log("Received save preferences request:");
     console.log("Auth info:", req.auth);
     console.log("Request body:", req.body);
 
-    const userId = req.auth.payload.sub; // Get Auth0 user ID
+    const userId = req.auth.payload.sub;
     console.log("User ID:", userId);
 
     const { sport, distance, latitude, longitude, skillLevel, mode, matchType } = req.body;
 
-    // Connect to database
     const db = connect.db();
     console.log("Connected to database");
-    const result = await db.collection('users').findOne(
-      { auth0Id: userId },
-      {
-      }
-    );
-    // Remove any existing preferences
+    const result = await db.collection('users').findOne({ auth0Id: userId });
+
     console.log("Removing existing preferences for user:", userId);
     const deleteResult = await db.collection('matchPreferences').deleteMany({
       userId: userId
     });
     console.log("Delete result:", deleteResult);
 
-    // Save new preferences
     console.log("Saving new preferences for user:", userId);
     const insertData = {
       userId: userId,
@@ -182,15 +154,13 @@ app.post('/api/matchmaking/save-preferences', jwtCheck, async (req, res) => {
   }
 });
 
-// Check for a match
 app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
   try {
-    const userId = req.auth.payload.sub; // <-- Updated to use payload.sub
+    const userId = req.auth.payload.sub;
     console.log("Checking for match for user:", userId);
 
     const db = connect.db();
 
-    // Get the user's preferences
     const myPreferences = await db.collection('matchPreferences').findOne({ userId: userId });
 
     if (!myPreferences) {
@@ -199,23 +169,22 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
 
     const matchWithinDistance = []
     const matchDistanceArray = await db.collection('matchPreferences')
-      .find({ userId: { $ne: userId } }) // Exclude current user
+      .find({ userId: { $ne: userId } })
       .project({ distance: 1, latitude: 1, longitude: 1, userId: 1 })
       .toArray();
 
     for (const item of matchDistanceArray) {
-      if (item.latitude && item.longitude) { // Check if coordinates exist
+      if (item.latitude && item.longitude) {
         const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, item.latitude, item.longitude);
 
         if (distance < myPreferences.distance && distance < item.distance) {
-          matchWithinDistance.push(item.userId); // Using userId instead of id
+          matchWithinDistance.push(item.userId);
         }
       }
     }
 
-    // Look for other users with matching preferences
     const potentialMatch = await db.collection('matchPreferences').findOne({
-      userId: { $in: matchWithinDistance }, // Not the current user
+      userId: { $in: matchWithinDistance },
       sport: myPreferences.sport,
       skillLevel: myPreferences.skillLevel,
       mode: myPreferences.mode,
@@ -232,7 +201,6 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
     console.log("USER 2: ", user2)
     const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, potentialMatch.latitude, potentialMatch.longitude);
 
-    // Create the match
     const matchData = {
       matchID: `match_${userId}_${potentialMatch.userId}_${Date.now()}`,
       player1: userId,
@@ -248,10 +216,8 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
       status: 'pending'
     };
 
-    // Save match to database
     await db.collection('matches').insertOne(matchData);
 
-    // Remove both users from matchmaking queue
     await db.collection('matchPreferences').deleteMany({
       userId: { $in: [userId, potentialMatch.userId] }
     });
@@ -266,7 +232,6 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
   }
 });
 
-// Create a match
 app.post('/api/matchmaking/create-match', jwtCheck, async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
@@ -275,10 +240,8 @@ app.post('/api/matchmaking/create-match', jwtCheck, async (req, res) => {
     const matchData = req.body;
     const db = connect.db();
 
-    // Save match to database
     await db.collection('matches').insertOne(matchData);
 
-    // Remove players from matchmaking queue
     await db.collection('matchPreferences').deleteMany({
       userId: { $in: [matchData.player1, matchData.player2] }
     });
@@ -290,7 +253,6 @@ app.post('/api/matchmaking/create-match', jwtCheck, async (req, res) => {
   }
 });
 
-// Leave matchmaking queue
 app.post('/api/matchmaking/leave-queue', jwtCheck, async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
@@ -298,7 +260,6 @@ app.post('/api/matchmaking/leave-queue', jwtCheck, async (req, res) => {
 
     const db = connect.db();
 
-    // Remove from matchmaking queue
     await db.collection('matchPreferences').deleteMany({ userId: userId });
 
     res.json({ success: true });
@@ -308,15 +269,13 @@ app.post('/api/matchmaking/leave-queue', jwtCheck, async (req, res) => {
   }
 });
 
-// Get a user's matches
 app.get('/api/matchmaking/user-matches', jwtCheck, async (req, res) => {
   try {
-    const userId = req.auth.payload.sub; // <-- Updated to use payload.sub
+    const userId = req.auth.payload.sub;
     console.log("Getting matches for user:", userId);
 
     const db = connect.db();
 
-    // Find matches where user is player1 or player2
     const matches = await db.collection('matches').find({
       $or: [
         { player1: userId },
@@ -331,7 +290,6 @@ app.get('/api/matchmaking/user-matches', jwtCheck, async (req, res) => {
   }
 });
 
-// Get specific match details
 app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
   try {
     const matchId = req.params.matchId;
@@ -365,21 +323,17 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Find conversations where the user's ID is in the participants array
     let conversations = await db.collection('conversations').find({
       participants: { $in: [user._id] }
     }).toArray();
 
     console.log("Conversations found:", conversations);
 
-    // Enhance the conversation data with recipient info
     const enhancedConversations = await Promise.all(conversations.map(async (convo) => {
-      // Find the other participant ID (not the current user)
       const otherParticipantId = convo.participants.find(
         id => id.toString() !== user._id.toString()
       );
 
-      // Get recipient details
       const recipient = await db.collection('users').findOne({ _id: otherParticipantId });
 
       return {
@@ -402,12 +356,10 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
 });
 
 //Event Routes
-// Get all events
 app.get('/api/events', jwtCheck, async (req, res) => {
   try {
     const db = connect.db();
 
-    // Fetch all events from the database
     const events = await db.collection('events').find({}).toArray();
 
     res.json({ events });
@@ -417,22 +369,18 @@ app.get('/api/events', jwtCheck, async (req, res) => {
   }
 });
 
-// Create a new event
 app.post('/api/events/create', jwtCheck, async (req, res) => {
   try {
-    const userId = req.auth.payload.sub; // Get Auth0 user ID
+    const userId = req.auth.payload.sub;
 
-    // Get event data from request body
     const { name, description, date, time, location } = req.body;
 
-    // Validate required fields
     if (!name || !date || !location) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const db = connect.db();
 
-    // Create the event object
     const event = {
       creatorId: userId,
       name,
@@ -440,14 +388,12 @@ app.post('/api/events/create', jwtCheck, async (req, res) => {
       date,
       time,
       location,
-      participants: [userId], // Creator is automatically a participant
+      participants: [userId],
       createdAt: new Date()
     };
 
-    // Save to database
     const result = await db.collection('events').insertOne(event);
 
-    // Return the created event with its ID
     res.status(201).json({
       success: true,
       event: {
@@ -461,13 +407,11 @@ app.post('/api/events/create', jwtCheck, async (req, res) => {
   }
 });
 
-// Get event details
 app.get('/api/events/:eventId', jwtCheck, async (req, res) => {
   try {
     const eventId = req.params.eventId;
     const db = connect.db();
 
-    // Find the event by ID
     const event = await db.collection('events').findOne({ _id: new ObjectId(eventId) });
 
     if (!event) {
@@ -481,7 +425,6 @@ app.get('/api/events/:eventId', jwtCheck, async (req, res) => {
   }
 });
 
-// Join an event
 app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
   try {
     const eventId = req.params.eventId;
@@ -489,7 +432,6 @@ app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
 
     const db = connect.db();
 
-    // Update the event to add the user to participants if not already there
     const result = await db.collection('events').updateOne(
       { _id: new ObjectId(eventId) },
       { $addToSet: { participants: userId } }
@@ -506,62 +448,54 @@ app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
   }
 });
 
-// Get all messages for a specific conversation
+// FIXED: Chat routes
 app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
   try {
-    // Get Auth0 user ID from JWT token
     const auth0ID = req.auth.payload?.sub;
 
-    // If no Auth0 ID, return error
     if (!auth0ID) {
       return res.status(400).json({ error: 'Auth0 ID not found in token' });
     }
 
-    // Get database connection and current user
     let db = connect.db();
     let user = await db.collection('users').findOne({ auth0Id: auth0ID });
     let conversationID;
 
-    // Validate conversation ID format
     try {
       conversationID = new ObjectId(req.params.conversationID);
     } catch (error) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
     }
 
-    // Find the conversation by ID
     let conversation = await db.collection('conversations').findOne({
       _id: conversationID
     });
 
-    // Find the recipient's user object (the other participant)
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
     let recipientName = await db.collection('users').findOne({
       _id: { $in: conversation.participants.filter(id => id.toString() !== user._id.toString()) }
     });
 
-    // If user not found, return error
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get all messages for this conversation
     let messages = await db.collection('messages').find({
       conversationID: conversationID
     }).toArray();
-    // Enhance each message with sender/recipient info and sentByUser flag
-    const enhancedMessages = await Promise.all(messages.map(async (msg) => {
-      // Find the sender ID
-      const senderID = msg.senderID;
 
-      // Get sender details
+    const enhancedMessages = await Promise.all(messages.map(async (msg) => {
+      const senderID = msg.senderID;
       const sender = await db.collection('users').findOne({ _id: new ObjectId(senderID) });
 
       let sentByUser = false;
-
-      // Check if the current user sent this message
       if (user._id.toString() == senderID.toString()) {
         sentByUser = true;
       }
+
       return {
         _id: msg._id,
         senderId: senderID,
@@ -574,14 +508,13 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
       }
     }));
 
-    //New conversation
     if (enhancedMessages.length === 0) {
       return res.json({
         recipientName: recipientName ? recipientName.name : 'Unknown User',
+        messages: []
       });
     }
 
-    // Return all enhanced messages
     res.json({ messages: enhancedMessages });
   } catch (error) {
     console.error("Error:", error);
@@ -597,7 +530,6 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
       return res.status(400).json({ error: 'Auth0 ID not found in token' });
     }
 
-    //Finds the current user
     let db = connect.db();
     let user = await db.collection('users').findOne({ auth0Id: auth0ID });
 
@@ -607,12 +539,10 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
 
     const { conversationID, message } = req.body;
 
-    // Validate required fields
     if (!conversationID || !message) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Create the message object
     const msg = {
       conversationID: new ObjectId(conversationID),
       senderID: user._id,
@@ -620,18 +550,14 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
       sentAt: new Date()
     };
 
-    // Save to database
     const result = await db.collection('messages').insertOne(msg);
 
     res.status(201).json({
       success: true,
-      message: {
-        ...msg,
-        _id: result.insertedId
-      }
+      _id: result.insertedId,
+      timestamp: msg.sentAt
     });
 
-    //Updates the last message in the conversation
     await db.collection('conversations').updateOne(
       { _id: new ObjectId(conversationID) },
       {
@@ -653,14 +579,12 @@ app.get('/api/users/search', jwtCheck, async (req, res) => {
   try {
     const searchQuery = req.query.q || '';
     const db = connect.db();
-    // Create a case-insensitive regex pattern that matches names starting with the query
+    
     const searchPattern = new RegExp(`^${searchQuery}`, 'i');
-    // Find users whose names start with the search query
-    // Exclude the current user from results
+    
     const currentUser = await db.collection('users').findOne({ auth0Id: req.auth.payload.sub });
     const query = { name: searchPattern };
 
-    // Add condition to exclude current user if found
     if (currentUser) {
       query._id = { $ne: currentUser._id };
     }
@@ -682,6 +606,7 @@ app.get('/api/users/search', jwtCheck, async (req, res) => {
   }
 });
 
+// FIXED: Conversation creation route
 app.post('/api/conversations/create', jwtCheck, async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
@@ -702,17 +627,26 @@ app.post('/api/conversations/create', jwtCheck, async (req, res) => {
       return res.status(404).json({ error: 'Current user not found' });
     }
 
+    // FIXED: Proper ObjectId conversion with error handling
+    let recipientObjectId;
+    try {
+      recipientObjectId = new ObjectId(recipientId);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid recipient ID format' });
+    }
+
     // Check if recipient exists
-    const recipient = await db.collection('users').findOne({ _id: new ObjectId(recipientId) });
+    const recipient = await db.collection('users').findOne({ _id: recipientObjectId });
     if (!recipient) {
       return res.status(404).json({ error: 'Recipient not found' });
     }
 
-    // Check if a conversation already exists between these users
+    // FIXED: Improved duplicate check
     const existingConversation = await db.collection('conversations').findOne({
-      participants: {
-        $all: [currentUser._id, new ObjectId(recipientId)]
-      }
+      $and: [
+        { participants: currentUser._id },
+        { participants: recipientObjectId }
+      ]
     });
 
     if (existingConversation) {
@@ -724,9 +658,11 @@ app.post('/api/conversations/create', jwtCheck, async (req, res) => {
 
     // Create a new conversation
     const newConversation = {
-      participants: [currentUser._id, new ObjectId(recipientId)],
-      lastMessageDate: new Date(),
+      participants: [currentUser._id, recipientObjectId],
+      createdAt: new Date(),
       lastMessage: '',
+      lastMessageDate: new Date(),
+      unread: false
     };
 
     const result = await db.collection('conversations').insertOne(newConversation);
@@ -737,14 +673,11 @@ app.post('/api/conversations/create', jwtCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating conversation:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 
-//Set up the betting pool
-//userID: Person who sets up bet is the only person who can close the bet, probably event owner. 
-//Team1Name: Name of team 1
-//team2Name: Name of team 2
+// FIXED: Betting routes
 app.post('/api/bets/makePool', jwtCheck, async (req, res) => {
   try {
     const { team1Name, team2Name } = req.body;
@@ -759,27 +692,21 @@ app.post('/api/bets/makePool', jwtCheck, async (req, res) => {
       timestamp: new Date()
     }
 
-    //add to collection
     const insertResults = await db.collection('bets').insertOne(insertData);
 
     res.json({ success: true, bettingId: insertResults.insertedId })
-    //return betting id
 
   } catch (error) {
     console.error("Error:", error);
     console.error(error.stack);
     res.status(500).json({ error: 'Server error', message: error.message });
   }
-
 })
 
-
-//
-// betAmount is the amount the user is betting
-//team to bet is the team the user is betting on, either 1 or 2
+// FIXED: Variable name bug and logic
 app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
   try {
-    const { userId, name, betAmount, teamToBet } = req.body;
+    const { userId, name, betAmount, teamToBet } = req.body; // FIXED: Consistent variable name
     const betId = req.params.betId;
     const db = connect.db();
 
@@ -789,7 +716,7 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
       name: name
     }
 
-    if (teamToBet == 1) {
+    if (teamToBet == 1) { // FIXED: Use correct variable name
       const result = await db.collection('bets').updateOne(
         { _id: new ObjectId(betId) },
         {
@@ -806,7 +733,7 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
       }
 
       return res.json({ success: true })
-    } else if (backingTeam == 2) {
+    } else if (teamToBet == 2) { // FIXED: Use correct variable name
       const result = await db.collection('bets').updateOne(
         { _id: new ObjectId(betId) },
         {
@@ -822,6 +749,8 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
         return res.status(404).json({ error: 'Betting pool not found' });
       }
       return res.json({ success: true })
+    } else {
+      return res.status(400).json({ error: 'Invalid team selection' });
     }
 
   } catch (error) {
@@ -831,9 +760,11 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
   }
 })
 
+// FIXED: Missing database connection
 app.get('/api/bets/bettingDetails/:betId', jwtCheck, async (req, res) => {
   try {
     const betId = req.params.betId
+    const db = connect.db(); // FIXED: Missing database connection
 
     let bet = await db.collection('bets').findOne({ _id: new ObjectId(betId) });
 
@@ -861,8 +792,8 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async (req, res) => {
       team2Betters: team2Names,
       team1Pool: team1Pool,
       team2Pool: team2Pool,
-      team1Odds: ((bet.pot / team1Pool) * 100),
-      team2Odds: ((bet.pot / team2Pool) * 100)
+      team1Odds: team1Pool > 0 ? ((bet.pot / team1Pool) * 100) : 0,
+      team2Odds: team2Pool > 0 ? ((bet.pot / team2Pool) * 100) : 0
     }
 
     res.json({ success: true, data: toSend })
@@ -872,39 +803,7 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async (req, res) => {
     console.error(error.stack);
     res.status(500).json({ error: 'Server error', message: error.message });
   }
-  //returns list of teamA backers, teamB backers, and current odds, 
 })
-
-//Winner is either 1 or 2: 1 for team1 winning and vice versa
-//Team1 Pool and Team2Pool can be got from bettingDetails. 
-/** 
-app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
-  try{
-    const betId = req.params.betId
-    const {winner, team1Pool, team2Pool} = req.body
-    const db = connect.db();
-    const bet = await db.collection('bets').findOne({_id:  new ObjectId(betId)});
-    const payout = {}
-    if(!bet) {
-       return res.status(404).json({success: false, error: "Betting pool not found"})
-    }
-    if(winner == 1) {
-      for(let i = 0; i < bet.team1Betters.length; i++) {
-        payout[bet.team1Betters[i].name] = ((bet.team1Betters[i].bet/team1Pool) * team2Pool)
-      }
-    } else if(winner == 2) {
-      for(let i = 0; i < bet.team2Betters.length; i++ ) {
-        payout[bet.team2Betters[i].name] = ((bet.team2Betters[i].bet/team2Pool) * team1Pool)
-      }
-    return res.json({success: true, payout: payout});
-    }
-  } catch(error) {
-    console.error("Error:", error);
-    console.error(error.stack);
-    res.status(500).json({ error: 'Server error', message: error.message });
-  }
-})
-*/
 
 // Mark conversation as read
 app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) => {
@@ -923,12 +822,11 @@ app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) =>
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Update the conversation to mark as read only if the current user is not the sender
     const result = await db.collection('conversations').updateOne(
       {
         _id: new ObjectId(conversationID),
         participants: { $in: [user._id] },
-        sender: { $ne: user._id } // Only mark as read if current user is not the sender
+        sender: { $ne: user._id }
       },
       {
         $set: {

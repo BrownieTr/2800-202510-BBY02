@@ -2,15 +2,14 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/layout/navbar";
 import BackButton from "../components/ui/backButton";
 import MessageCard from "../components/ui/messageCard";
-import { useAuth0 } from "@auth0/auth0-react"; // Make sure this import is available
+import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 
 export default function NewChat() {
-  // State hooks for managing search term, search results, and loading state
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); // Add state for error message
+  const [errorMessage, setErrorMessage] = useState("");
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
   const [preselectedPartner, setPreselectedPartner] = useState(null);
@@ -35,7 +34,6 @@ export default function NewChat() {
       console.log("Starting conversation with partner ID:", partnerId);
       
       // Automatically start the conversation with this partner
-      // Using setTimeout to ensure state has updated properly
       setTimeout(() => {
         startConversation(partnerId);
       }, 100);
@@ -44,9 +42,6 @@ export default function NewChat() {
 
   // Search for users when the search term changes
   useEffect(() => {
-    /**
-     * Fetches users matching the search term from the API.
-     */
     const searchUsers = async () => {
       if (searchTerm.trim().length === 0) {
         setSearchResults([]);
@@ -88,9 +83,7 @@ export default function NewChat() {
   }, [searchTerm, getAccessTokenSilently]);
 
   /**
-   * Starts a new conversation with the selected user.
-   *
-   * @param {string} userId - The ID of the user to start a conversation with.
+   * FIXED: Starts a new conversation with the selected user.
    */
   const startConversation = async (userId) => {
     if (!userId) {
@@ -99,99 +92,69 @@ export default function NewChat() {
     }
 
     console.log("Starting conversation with user ID:", userId);
-    let retryCount = 0;
-    const maxRetries = 2;
 
-    const attemptStartConversation = async () => {
-      try {
-        setIsLoading(true);
-        setErrorMessage(""); // Clear any existing error messages
-        const token = await getAccessTokenSilently();
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+      
+      const token = await getAccessTokenSilently();
 
-        console.log("Creating conversation with recipient ID:", userId);
+      console.log("Creating conversation with recipient ID:", userId);
 
-        // Use POST method and send userId in the request body
-        const response = await fetch("/api/conversations/create", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ recipientId: userId }),
-        });
+      // FIXED: Proper error handling and request structure
+      const response = await fetch("/api/conversations/create", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ recipientId: userId }),
+      });
 
-        const responseText = await response.text();
-        console.log("API response status:", response.status);
-        console.log("API response text:", responseText);
-
-        if (!response.ok) {
-          let errorMsg = "Failed to start conversation";
-          
-          try {
-            // Try to parse the error response
-            const errorData = JSON.parse(responseText);
-            if (errorData.error) {
-              errorMsg = errorData.error;
-            }
-          } catch (e) {
-            // If parsing fails, use the response status text
-            errorMsg = `Server error: ${response.statusText || response.status}`;
-          }
-          
-          throw new Error(errorMsg);
-        }
-
-        // Parse the response text to get the conversation ID
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (e) {
-          throw new Error("Invalid response from server");
-        }
-
-        if (!data.conversationId) {
-          throw new Error("No conversation ID returned from server");
-        }
-
-        console.log("Conversation created successfully, navigating to:", data.conversationId);
-
-        // Navigate to the chat page with the conversation ID
-        navigate(`/chat/${data.conversationId}`);
-      } catch (error) {
-        console.error("Error starting conversation:", error);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
         
-        // Check if it's a network error and we can retry
-        if (retryCount < maxRetries && error.message.includes("network")) {
-          retryCount++;
-          setErrorMessage(`Connection issue. Retrying... (${retryCount}/${maxRetries})`);
-          setTimeout(attemptStartConversation, 1000); // Retry after 1 second
-          return;
-        }
-        
-        // Set appropriate error message based on the error
-        if (error.message.includes("user not found") || error.message.includes("recipient")) {
-          setErrorMessage("User not found or unavailable. Please select another user.");
-        } else if (error.message.includes("already exists")) {
-          setErrorMessage("You already have a conversation with this user.");
-          
-          // Try to extract conversation ID from error message to navigate there
-          const match = error.message.match(/conversation_id:(\w+)/);
-          if (match && match[1]) {
-            setTimeout(() => {
-              navigate(`/chat/${match[1]}`);
-            }, 1500);
-          }
-        } else if (error.message.includes("Missing") || error.message.includes("partner")) {
-          setErrorMessage("Cannot start chat: Missing partner information. Please find a new match or search for a user.");
+        // Handle specific error cases
+        if (response.status === 400) {
+          throw new Error(errorData.error || "Invalid user ID format");
+        } else if (response.status === 404) {
+          throw new Error(errorData.error || "User not found");
         } else {
-          setErrorMessage(`Failed to start conversation: ${error.message}`);
+          throw new Error(errorData.error || `Server error: ${response.status}`);
         }
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    await attemptStartConversation();
+      const data = await response.json();
+      
+      if (!data.conversationId) {
+        throw new Error("No conversation ID returned from server");
+      }
+
+      console.log("Conversation created/found successfully:", data.conversationId);
+
+      // FIXED: Use navigate with proper error handling
+      navigate(`/chat/${data.conversationId}`);
+      
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+      
+      // FIXED: Better error messages for different scenarios
+      if (error.message.includes("Invalid") || error.message.includes("format")) {
+        setErrorMessage("Invalid user selection. Please try selecting a different user.");
+      } else if (error.message.includes("not found")) {
+        setErrorMessage("User not found. They may have deleted their account.");
+      } else if (error.message.includes("already")) {
+        setErrorMessage("You already have a conversation with this user. Redirecting...");
+        // If conversation exists, try to extract and navigate to it
+        setTimeout(() => {
+          navigate("/messages");
+        }, 2000);
+      } else {
+        setErrorMessage(`Failed to start conversation: ${error.message}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -215,32 +178,23 @@ export default function NewChat() {
         {errorMessage && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative my-2 mx-4" role="alert">
             <span className="block sm:inline">{errorMessage}</span>
-            {errorMessage.includes("Missing") && (
-              <div className="mt-2">
-                <button
-                  onClick={() => navigate('/match-preferences')}
-                  className="text-blue-700 underline mr-4"
-                >
-                  Find new match
-                </button>
-                <button
-                  onClick={() => {
-                    setErrorMessage("");
-                    setSearchTerm("");
-                  }}
-                  className="text-blue-700 underline"
-                >
-                  Search for user
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => setErrorMessage("")}
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            >
+              <span className="sr-only">Dismiss</span>
+              ×
+            </button>
           </div>
         )}
 
         {/* Search results or loading indicator */}
         <div className="flex-grow">
           {isLoading ? (
-            <div className="text-center p-4">Searching...</div>
+            <div className="text-center p-4">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <p className="mt-2">Searching...</p>
+            </div>
           ) : searchResults.length > 0 ? (
             <ul className="divide-y divide-gray-700">
               {searchResults.map((user) => (

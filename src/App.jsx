@@ -3,7 +3,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import "./styles/App.css";
 import Landing from "./pages/landing";
 import Profile from "./pages/profile";
-// import Location from "./services/locationService";
 import Event from "./pages/events";
 import Chat from "./pages/chat";
 import ProtectedRoute from "./services/protectedRoutes";
@@ -23,17 +22,22 @@ function App() {
   const { isLoading, isAuthenticated } = useAuth0();
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
   }
 
   return (
       <Routes>
-        {/* Public routes */}``
+        {/* Public routes */}
         <Route path="/" 
-                element={
-          isAuthenticated ? <Navigate to="/home" /> : <Landing />
-        }
+          element={
+            isAuthenticated ? <Navigate to="/home" /> : <Landing />
+          }
         />
+        
         {/* Protected routes - require authentication */}
         <Route
           path="/profile"
@@ -43,14 +47,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/location"
-          element={
-            <ProtectedRoute>
-              <Location />
-            </ProtectedRoute>
-          }
-        />
+        
+        {/* REMOVED: Broken location route that referenced non-existent component */}
+        
         <Route
           path="/events"
           element={

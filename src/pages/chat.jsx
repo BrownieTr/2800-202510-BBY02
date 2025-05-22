@@ -5,14 +5,30 @@ import GlassChatBubble from "../components/ui/glassChatBubble";
 import GlassNavbar from "../components/layout/glassNavbar";
 import GlassTabBar from "../components/layout/glassTabBar";
 
+// BackButton component
+const BackButton = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <button onClick={() => navigate(-1)} className="glass-icon-button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </button>
+  );
+};
+
 export default function Chat() {
   // Authentication and state hooks
-  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0(); // Ensure 'user' is destructured
+  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [isNewConversation, setIsNewConversation] = useState(false);
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
+  const navigate = useNavigate();
 
   // Fetch messages when the user is authenticated
   useEffect(() => {
@@ -21,6 +37,17 @@ export default function Chat() {
       fetchMessages();
     }
   }, [isAuthenticated]);
+
+  /**
+   * Fetches current user information (placeholder function)
+   */
+  const fetchCurrentUser = async () => {
+    try {
+      console.log("Current user:", user);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
 
   /**
    * Fetches messages for the current conversation from the API.
@@ -40,6 +67,21 @@ export default function Chat() {
       );
 
       if (!response.ok) {
+        if (response.status === 404) {
+          // Conversation doesn't exist yet - this is a new conversation
+          setIsNewConversation(true);
+          setMessages([{
+            _id: 'welcome_msg',
+            message: "Start a new conversation! Your first message will create this chat.",
+            sentByUser: false,
+            timestamp: new Date().toISOString(),
+            senderName: 'PlayPal',
+            profilePic: null,
+            isSystemMessage: true
+          }]);
+          setLoading(false);
+          return;
+        }
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
@@ -103,28 +145,27 @@ export default function Chat() {
             setMessages(prevMessages =>
               prevMessages.map(msg =>
                 msg._id === tempMessageId
-                  ? { ...msg, isPending: false }
+                  ? { ...msg, isPending: false, isLocalOnly: true }
                   : msg
               )
             );
             
-            // The conversation is now considered "started" locally
-            if (messages.length === 1 && messages[0].isSystemMessage) {
-              // Remove the system welcome message
-              setMessages(prevMessages =>
-                prevMessages.filter(msg => !msg.isSystemMessage).concat([
-                  {
-                    _id: 'welcome_response',
-                    message: "Message sent! Your chat partner will see your message when they connect.",
-                    sentByUser: false,
-                    timestamp: new Date().toISOString(),
-                    senderName: 'PlayPal',
-                    profilePic: null,
-                    isSystemMessage: true
-                  }
-                ])
-              );
-            }
+            // Remove system welcome message and add response
+            setMessages(prevMessages => {
+              const filteredMessages = prevMessages.filter(msg => !msg.isSystemMessage);
+              return [
+                ...filteredMessages,
+                {
+                  _id: 'welcome_response',
+                  message: "Message sent! Your chat partner will see your message when they connect.",
+                  sentByUser: false,
+                  timestamp: new Date().toISOString(),
+                  senderName: 'PlayPal',
+                  profilePic: null,
+                  isSystemMessage: true
+                }
+              ];
+            });
           }, 500);
           
           return;
@@ -154,7 +195,7 @@ export default function Chat() {
             setMessages(prevMessages =>
               prevMessages.map(msg =>
                 msg._id === tempMessageId
-                  ? { ...msg, isPending: false }
+                  ? { ...msg, isPending: false, isLocalOnly: true }
                   : msg
               )
             );
@@ -167,44 +208,66 @@ export default function Chat() {
 
         const data = await response.json();
 
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            _id: data._id,
-            message: inputText,
-            sentByUser: true,
-            timestamp: new Date().toISOString(),
-            senderName: user?.name || user?.nickname || "You", // Add sender's name
-            profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff", // Add sender's profile picture
-          },
-        ]);
+        // Update the temporary message with the real one from API
+        setMessages((prevMessages) =>
+          prevMessages.map(msg =>
+            msg._id === tempMessageId
+              ? {
+                  _id: data._id,
+                  message: messageText,
+                  sentByUser: true,
+                  timestamp: data.timestamp || new Date().toISOString(),
+                  senderName: user?.name || user?.nickname || "You",
+                  profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff",
+                  isPending: false
+                }
+              : msg
+          )
+        );
 
-        setInputText("");
       } catch (error) {
         console.error("Error sending message:", error);
+        
+        // Mark message as failed
+        setMessages(prevMessages =>
+          prevMessages.map(msg =>
+            msg._id === tempMessageId
+              ? { ...msg, isPending: false, isFailed: true }
+              : msg
+          )
+        );
+        
         setError(error.message);
       }
     }
   };
 
-  // Back icon
-  const backIcon = (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12"></line>
-      <polyline points="12 19 5 12 12 5"></polyline>
-    </svg>
-  );
+  // Show loading while Auth0 is initializing
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-white">Please log in to access chat.</div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {/* Navbar with a back button and recipient name */}
-      <nav className="sticky top-0 z-50 border-b bg-white">
-        <Navbar
-          className="sticky top-0 z-50"
-          iconLeft={<BackButton />}
-          header={messages[0]?.recipientName}
-        />
-      </div>
+    <div className="flex flex-col h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-teal-500">
+      {/* FIXED: Navbar with correct props */}
+      <GlassNavbar
+        title={messages.find(m => !m.sentByUser)?.senderName || "Chat"} // FIXED: Use 'title' instead of 'header'
+        leftIcon={<BackButton />}
+        onLeftIconClick={() => navigate(-1)}
+      />
       
       {/* Scrollable message area - takes up all available space */}
       <div className="flex-grow overflow-y-auto px-2 pb-24 pt-2">

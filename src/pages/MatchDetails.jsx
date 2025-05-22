@@ -36,6 +36,9 @@ export default function MatchDetails() {
         const parsedData = JSON.parse(storedMatchData);
         console.log("Initial match data:", parsedData);
         
+        // Set the data immediately so UI can render
+        setMatchData(parsedData);
+        
         // Determine if we have a matchID or _id to use for fetching details
         const matchIdentifier = parsedData.matchID || parsedData.matchId || parsedData._id;
         
@@ -45,16 +48,14 @@ export default function MatchDetails() {
             const fullMatchData = await getMatchDetails(matchIdentifier, getAccessTokenSilently);
             console.log("Fetched match details:", fullMatchData);
             
-            // Update with complete data from server
-            setMatchData(fullMatchData);
+            // Update with complete data from server if available
+            if (fullMatchData) {
+              setMatchData(fullMatchData);
+            }
           } catch (fetchError) {
             console.error("Error fetching match details:", fetchError);
-            // Continue with the data from localStorage
-            setMatchData(parsedData);
+            // Continue with the data from localStorage - don't throw error
           }
-        } else {
-          // No ID to fetch with, just use the localStorage data
-          setMatchData(parsedData);
         }
         
         setIsLoading(false);
@@ -62,7 +63,6 @@ export default function MatchDetails() {
         console.error("Error handling match data:", error);
         setError("Error loading match details");
         setIsLoading(false);
-        // Don't navigate away, show error instead
       }
     };
 
@@ -74,76 +74,47 @@ export default function MatchDetails() {
   // Get current user's ID from Auth0
   const { user } = useAuth0();
   
-  // Determine if current user is player1 or player2
-  const isPlayer1 = user && matchData && matchData.player1 && user.sub === matchData.player1;
-  
-  // Get partner's ID and name based on whether current user is player1 or player2
+  // FIXED: Better partner info extraction with fallback to user search
   const getPartnerInfo = () => {
     if (!matchData) return { id: null, name: "Unknown Partner" };
     
-    // Check if we're using Auth0 user sub or different ID format
     const currentUserId = user?.sub;
     
-    // Debug log to help troubleshoot
-    console.log("DETAILED DEBUG - Match data:", JSON.stringify(matchData, null, 2));
-    console.log("DETAILED DEBUG - Current user:", JSON.stringify(user, null, 2));
+    console.log("MATCH DEBUG - Match data:", JSON.stringify(matchData, null, 2));
+    console.log("MATCH DEBUG - Current user:", JSON.stringify(user, null, 2));
     
-    // Create an array of all possible partner IDs from the match data
-    const possiblePartnerIds = [
-      // Player IDs
-      matchData.player2,
-      matchData.player1,
-      // Other possible ID formats
-      matchData.player2Id,
-      matchData.player1Id,
-      matchData.participant2,
-      matchData.participant1,
-      matchData.partnerId,
-      matchData.userId,
-      // ID from match ID if it contains user IDs
-      matchData.matchID?.split('_')[1],
-      matchData.matchID?.split('_')[2]
-    ].filter(id => id && id !== currentUserId); // Filter out null/undefined and current user
+    // Determine partner based on current user's position in match
+    let partnerId = null;
+    let partnerName = "Match Partner";
     
-    console.log("DETAILED DEBUG - Possible partner IDs:", possiblePartnerIds);
-    
-    // Get possible partner names
-    const possiblePartnerNames = [
-      matchData.player2Name,
-      matchData.player1Name,
-      matchData.participant2Name,
-      matchData.participant1Name,
-      matchData.partnerName,
-      "Match Partner"
-    ].filter(Boolean); // Filter out null/undefined
-    
-    // Check if user is player1 by comparing IDs
     if (matchData.player1 && currentUserId === matchData.player1) {
-      return {
-        id: matchData.player2 || possiblePartnerIds[0] || null,
-        name: matchData.player2Name || possiblePartnerNames[0] || "Match Partner"
-      };
+      // Current user is player1, partner is player2
+      partnerId = matchData.player2;
+      partnerName = matchData.player2Name || "Match Partner";
+    } else if (matchData.player2 && currentUserId === matchData.player2) {
+      // Current user is player2, partner is player1  
+      partnerId = matchData.player1;
+      partnerName = matchData.player1Name || "Match Partner";
+    } else {
+      // Fallback: try to find any other player ID
+      const possibleIds = [matchData.player1, matchData.player2].filter(id => id && id !== currentUserId);
+      const possibleNames = [matchData.player1Name, matchData.player2Name].filter(Boolean);
+      
+      partnerId = possibleIds[0] || null;
+      partnerName = possibleNames[0] || "Match Partner";
     }
-    // Check if user is player2
-    else if (matchData.player2 && currentUserId === matchData.player2) {
-      return {
-        id: matchData.player1 || possiblePartnerIds[0] || null,
-        name: matchData.player1Name || possiblePartnerNames[0] || "Match Partner"
-      };
-    }
-    // If we can't determine which player the current user is, use any available partner info
-    else {
-      // Return first available partner ID and name
-      return {
-        id: possiblePartnerIds[0] || null,
-        name: possiblePartnerNames[0] || "Match Partner"
-      };
-    }
+    
+    console.log("MATCH DEBUG - Partner info:", { partnerId, partnerName });
+    
+    return {
+      id: partnerId,
+      name: partnerName
+    };
   };
   
   const partnerInfo = getPartnerInfo();
   
-  // Function to directly initiate a chat with the match partner
+  // FIXED: Function to find partner's user record and start chat
   const handleStartChat = async () => {
     if (!matchData) {
       setError("Cannot start chat: Missing match information");
@@ -153,16 +124,65 @@ export default function MatchDetails() {
     setIsLoading(true);
     
     try {
-      // Get partner information
       const partnerData = getPartnerInfo();
-      console.log("Partner data for chat:", partnerData);
+      console.log("Starting chat with partner:", partnerData);
       
       if (!partnerData.id) {
-        throw new Error("Cannot find partner ID. Please try finding a new match.");
+        throw new Error("Cannot find partner information. Please try finding a new match.");
       }
       
-      // Create conversation via API
+      // FIXED: Search for the partner by Auth0 ID first to get their MongoDB ObjectId
       const token = await getAccessTokenSilently();
+      
+      // Search for the partner user to get their MongoDB _id
+      const searchResponse = await fetch(`/api/users/search?q=${encodeURIComponent(partnerData.name)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!searchResponse.ok) {
+        throw new Error("Failed to find partner user");
+      }
+      
+      const searchData = await searchResponse.json();
+      console.log("Search results:", searchData);
+      
+      // Find the partner in search results
+      let partnerUser = null;
+      if (searchData.users && searchData.users.length > 0) {
+        // Try to find exact match by name first
+        partnerUser = searchData.users.find(u => u.name === partnerData.name);
+        // If no exact match, take the first result
+        if (!partnerUser) {
+          partnerUser = searchData.users[0];
+        }
+      }
+      
+      if (!partnerUser || !partnerUser._id) {
+        // FALLBACK: Try to use the Auth0 ID directly if search fails
+        console.log("Search failed, trying Auth0 ID directly:", partnerData.id);
+        
+        // Get all users and find by auth0Id (less efficient but more reliable)
+        const usersResponse = await fetch('/users', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (usersResponse.ok) {
+          const allUsers = await usersResponse.json();
+          partnerUser = allUsers.find(u => u.auth0Id === partnerData.id);
+        }
+        
+        if (!partnerUser) {
+          throw new Error("Cannot find partner user. They may not have completed their profile setup.");
+        }
+      }
+      
+      console.log("Found partner user:", partnerUser);
+      
+      // Now create conversation with the partner's MongoDB ObjectId
       const response = await fetch("/api/conversations/create", {
         method: "POST",
         headers: {
@@ -170,26 +190,28 @@ export default function MatchDetails() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          recipientId: partnerData.id
+          recipientId: partnerUser._id // Use MongoDB ObjectId, not Auth0 ID
         }),
       });
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Error response:", errorText);
+        console.error("Conversation creation error:", errorText);
         
+        let errorData;
         try {
-          const errorData = JSON.parse(errorText);
-          // If conversation exists, use that ID
-          if (errorData.conversationId) {
-            navigate(`/chat/${errorData.conversationId}`);
-            return;
-          }
+          errorData = JSON.parse(errorText);
         } catch (e) {
-          // Continue to throw the error
+          throw new Error(`Server error: ${response.status}`);
         }
         
-        throw new Error(`Failed to create conversation: ${response.status}`);
+        if (errorData.conversationId) {
+          // Conversation already exists, use it
+          navigate(`/chat/${errorData.conversationId}`);
+          return;
+        }
+        
+        throw new Error(errorData.error || `Failed to create conversation: ${response.status}`);
       }
       
       const data = await response.json();
@@ -249,12 +271,31 @@ export default function MatchDetails() {
         <div className="glass-card max-w-md mx-auto">
           <h2 className="text-2xl font-bold text-white mb-4">Error</h2>
           <p className="text-white mb-6">{error}</p>
-          <GlassButton
-            onClick={() => navigate("/home")}
-            className="w-full bg-blue-500 bg-opacity-30 py-3"
-          >
-            Return Home
-          </GlassButton>
+          <div className="space-y-3">
+            <GlassButton
+              onClick={() => navigate("/home")}
+              className="w-full bg-blue-500 bg-opacity-30 py-3"
+            >
+              Return Home
+            </GlassButton>
+            <GlassButton
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                // Try to reload match data
+                const storedMatchData = localStorage.getItem("matchData");
+                if (storedMatchData) {
+                  setMatchData(JSON.parse(storedMatchData));
+                  setIsLoading(false);
+                } else {
+                  navigate("/match-preferences");
+                }
+              }}
+              className="w-full bg-gray-500 bg-opacity-30 py-3"
+            >
+              Retry
+            </GlassButton>
+          </div>
         </div>
       </div>
     );
@@ -362,14 +403,14 @@ export default function MatchDetails() {
             )}
           </div>
           
-          
           {/* Action buttons */}
           <div className="space-y-4">
             <GlassButton
               className="w-full bg-green-500 bg-opacity-30 py-4"
               onClick={handleStartChat}
+              disabled={isLoading}
             >
-              Start Chat with {partnerInfo.name.split(' ')[0] || "Partner"}
+              {isLoading ? "Starting Chat..." : `Start Chat with ${partnerInfo.name.split(' ')[0] || "Partner"}`}
             </GlassButton>
             
             <GlassButton
