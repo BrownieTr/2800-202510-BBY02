@@ -83,13 +83,6 @@ export default function Index() {
 
       <div className="mt-30 flex items-center justify-center space-x-4">
         <Button
-          className="rounded-xl w-20 h-20 bg-gray-200 flex items-center justify-center text-xs text-center flex-col"
-          onClick={() => navigate("/match-preferences")}
-        >
-          <div>match</div>
-          <div>settings</div>
-        </Button>
-        <Button
           className="rounded-xl w-36 h-20 bg-gray-200 flex
         items-center justify-center text-lg text-black"
           onClick={() => navigate("/match-preferences")}
