@@ -7,19 +7,40 @@ import { useParams } from "react-router-dom";
 
 export default function chat() {
   // Authentication and state hooks
-  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0(); // Ensure 'user' is destructured
+  const { isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0(); // Ensure 'user' is destructured
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
+  const [user, setUser] = useState([]);
 
   // Fetch messages when the user is authenticated
   useEffect(() => {
     if (isAuthenticated) {
+      fetchCurrentUser();
       fetchMessages();
     }
   }, [isAuthenticated]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await fetch("http://localhost:3000/api/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      setUser(data);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      setError(error.message);
+    }
+  };
 
   /**
    * Fetches messages for the current conversation from the API.
@@ -94,8 +115,9 @@ export default function chat() {
             message: inputText,
             sentByUser: true,
             timestamp: new Date().toISOString(),
-            senderName: user?.name || user?.nickname || "You", // Add sender's name
-            profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff", // Add sender's profile picture
+            senderName: user.name || "You", // Add sender's name
+            profilePic:
+              user.profilePic || "https://www.dummyimage.com/25x25/000/fff", // Add sender's profile picture
           },
         ]);
 

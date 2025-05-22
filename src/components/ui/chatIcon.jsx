@@ -1,71 +1,68 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import ClickableIcons from "./clickableIcons";
 
 export default function ChatIcon() {
   const [hasUnread, setHasUnread] = useState(false);
   const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
-  
+
+  const checkUnreadMessages = useCallback(async () => {
+    if (!isAuthenticated) return;
+
+    try {
+      const token = await getAccessTokenSilently();
+      const [conversationsResponse, userResponse] = await Promise.all([
+        fetch("http://localhost:3000/api/conversations", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        }),
+        fetch("http://localhost:3000/api/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        }),
+      ]);
+
+      if (!conversationsResponse.ok || !userResponse.ok) {
+        throw new Error(
+          `HTTP error! Conversations: ${conversationsResponse.status}, User: ${userResponse.status}`
+        );
+      }
+
+      const [conversationsData, userData] = await Promise.all([
+        conversationsResponse.json(),
+        userResponse.json(),
+      ]);
+
+      const conversations = conversationsData.conversations || [];
+
+      // Check if any conversation has unread messages not sent by current user
+      const hasUnreadMessages = conversations.forEach((element) => {
+        if (element.sender !== user._id && element.unread) {
+          console.log("Unread message found:", element);
+          setHasUnread(true);
+        }
+      });
+    } catch (error) {
+      console.error("Error checking unread messages:", error);
+    }
+  }, [isAuthenticated, getAccessTokenSilently]);
+
   // Check for unread messages when component mounts and periodically
   useEffect(() => {
     if (isAuthenticated) {
       // Initial check
       checkUnreadMessages();
-      
-      // Set up polling to check for new messages every 15 seconds
-      const intervalId = setInterval(checkUnreadMessages, 15000);
-      
+
+      // Set up polling to check for new messages every 10 seconds (reduced for better responsiveness)
+      const intervalId = setInterval(checkUnreadMessages, 10000);
+
       // Clean up interval on component unmount
       return () => clearInterval(intervalId);
     }
-  }, [isAuthenticated]);
-
-  const checkUnreadMessages = async () => {
-    try {
-      const token = await getAccessTokenSilently();
-      const response = await fetch("http://localhost:3000/api/conversations", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        // Add cache control to prevent browser caching
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const conversations = data.conversations || [];
-
-      // Get user data to check if sender is the current user
-      const userResponse = await fetch("http://localhost:3000/api/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: 'no-store'
-      });
-
-      if (!userResponse.ok) {
-        throw new Error(`HTTP error! Status: ${userResponse.status}`);
-      }
-
-      const userData = await userResponse.json();
-      
-      // Check if any conversation has unread messages not sent by current user
-      const hasUnreadMessages = conversations.some(convo => {
-        const isUserSender = userData && convo.sender && 
-          convo.sender.toString() === userData._id.toString();
-        return convo.unread && !isUserSender;
-      });
-      console.log(conversations);
-      
-      setHasUnread(hasUnreadMessages);
-    } catch (error) {
-      console.error("Error checking unread messages:", error);
-    }
-  };
+  }, [isAuthenticated, checkUnreadMessages]);
 
   // If there are unread messages, show the first icon
   if (hasUnread) {
@@ -81,7 +78,7 @@ export default function ChatIcon() {
       </svg>
     );
   }
-  
+
   // If there are no unread messages, show the second icon
   return (
     <svg

@@ -580,6 +580,7 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
       return res.status(400).json({ error: 'Auth0 ID not found in token' });
     }
 
+    //Finds the current user
     let db = connect.db();
     let user = await db.collection('users').findOne({ auth0Id: auth0ID });
 
@@ -620,8 +621,8 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
         $set: {
           lastMessage: message,
           lastMessageDate: new Date(),
-          unread: true,
           sender: user._id,
+          unread: true,
         }
       });
 
@@ -893,9 +894,10 @@ app.post('/api/bets/resolveBet/:betId', jwtCheck, async(req,res) => {
 app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
+    const conversationID = req.params.conversationID;
 
     if (!auth0ID) {
-      return res.status(400).json({ error: 'Auth0 ID not found in token' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     let db = connect.db();
@@ -905,30 +907,21 @@ app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) =>
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const conversationID = req.params.conversationID;
-    
-    try {
-      // Find the conversation
-      const conversation = await db.collection('conversations').findOne({
-        _id: new ObjectId(conversationID)
-      });
-      
-      // Only mark as read if the current user is not the sender
-      if (conversation && conversation.sender && 
-          conversation.sender.toString() !== user._id.toString()) {
-        
-        // Update the conversation to mark as read
-        await db.collection('conversations').updateOne(
-          { _id: new ObjectId(conversationID) },
-          { $set: { unread: false } }
-        );
+    // Update the conversation to mark as read only if the current user is not the sender
+    const result = await db.collection('conversations').updateOne(
+      { 
+        _id: new ObjectId(conversationID),
+        participants: { $in: [user._id] },
+        sender: { $ne: user._id } // Only mark as read if current user is not the sender
+      },
+      { 
+        $set: { 
+          unread: false,
+        } 
       }
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error updating read status:', error);
-      res.status(500).json({ error: 'Server error' });
-    }
+    );
+
+    res.json({ success: true, modified: result.modifiedCount > 0 });
   } catch (error) {
     console.error('Error marking conversation as read:', error);
     res.status(500).json({ error: 'Server error' });
