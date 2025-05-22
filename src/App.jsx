@@ -32,7 +32,7 @@ function App() {
           isAuthenticated ? <Navigate to="/home" /> : <Landing />
         }
         />
-        {/* Protected routes - require authentication */}
+        {/* Protected routes - require authentication
         <Route
           path="/profile"
           element={
@@ -128,7 +128,7 @@ function App() {
               <SetUpProfile />
             </ProtectedRoute>
           }
-        />
+        /> */}
       </Routes>
   );
 }
