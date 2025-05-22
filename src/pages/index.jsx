@@ -5,18 +5,37 @@ import GlassNavbar from "../components/layout/glassNavbar";
 import GlassTabBar from "../components/layout/glassTabBar";
 import GlassButton from "../components/ui/glassButton";
 import GlassBettingCard from "../components/ui/glassBettingCard";
+import GlassEventCard from "../components/ui/glassEventCard";
+import { getUserMatches } from "../services/matchMaking";
 
 export default function Index() {
   const { isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [user, setUser] = useState([]);
   const [error, setError] = useState(null);
+  const [matches, setMatches] = useState([]);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchUser();
+      fetchUserMatches();
     }
   }, [isAuthenticated]);
+
+  // Fetch user's matches
+  const fetchUserMatches = async () => {
+    try {
+      setIsLoadingMatches(true);
+      const userMatches = await getUserMatches(getAccessTokenSilently);
+      console.log("User matches:", userMatches);
+      setMatches(userMatches || []);
+    } catch (error) {
+      console.error("Error fetching user matches:", error);
+    } finally {
+      setIsLoadingMatches(false);
+    }
+  };
 
   const fetchUser = async () => {
     try {
@@ -99,7 +118,68 @@ export default function Index() {
             Welcome {user.name || "Player"}
           </h1>
           
-          {/* Featured match card */}
+          {/* Upcoming Matches */}
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Your Matches</h2>
+            
+            {isLoadingMatches ? (
+              <div className="text-center text-white p-4">
+                <div className="w-8 h-8 mx-auto mb-2 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                <p>Loading matches...</p>
+              </div>
+            ) : matches && matches.length > 0 ? (
+              <div className="space-y-4">
+                {matches.map((match, index) => {
+                  // Determine if the current user is player1 or player2
+                  const isPlayer1 = user && match.player1 && user.sub === match.player1;
+                  
+                  // Get the partner's name based on whether the current user is player1 or player2
+                  const partnerName = isPlayer1 ? match.player2Name : match.player1Name;
+                  
+                  return (
+                    <div key={match._id || match.matchID || index} className="glass-card p-4">
+                      <h3 className="text-lg font-semibold text-white mb-1">
+                        {`Match with ${partnerName || 'Player'}`}
+                      </h3>
+                      <p className="text-white opacity-80 text-sm mb-2">
+                        {`${match.sport} - ${match.matchType} - ${match.mode}`}
+                      </p>
+                      <div className="flex justify-between items-center text-sm text-white opacity-70 mb-3">
+                        <span>{match.timestamp || 'Upcoming'}</span>
+                        <span className="capitalize">{match.status || 'pending'}</span>
+                      </div>
+                      <GlassButton
+                        className="w-full py-2 text-sm"
+                        onClick={() => {
+                          // Save the match data to localStorage before navigating
+                          localStorage.setItem("matchData", JSON.stringify(match));
+                          navigate(`/match`);
+                        }}
+                      >
+                        View Match Details
+                      </GlassButton>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="glass-card text-center p-4 mb-6">
+                <p className="text-white mb-2">No matches found</p>
+                <p className="text-white opacity-70 text-sm mb-4">
+                  Find opponents and play together!
+                </p>
+                <GlassButton
+                  className="w-full py-3"
+                  onClick={() => navigate("/match-preferences")}
+                >
+                  Find Match
+                </GlassButton>
+              </div>
+            )}
+          </div>
+          
+          {/* Featured betting card */}
+          <h2 className="text-xl font-bold text-white mb-4">Featured Game</h2>
           <GlassBettingCard
             setting="Today, 8:00 PM • Local Arena"
             team1="Lakers"

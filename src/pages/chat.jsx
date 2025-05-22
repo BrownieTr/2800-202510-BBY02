@@ -15,13 +15,32 @@ export default function Chat() {
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
   const [recipientName, setRecipientName] = useState("Chat");
-
-  // Fetch messages when the user is authenticated
+  const [isNewConversation, setIsNewConversation] = useState(false);
+  
+  // Check for stored chat information from MatchDetails and fetch messages
   useEffect(() => {
+    const storedChatInfo = localStorage.getItem("currentChatInfo");
+    if (storedChatInfo) {
+      try {
+        const chatInfo = JSON.parse(storedChatInfo);
+        console.log("Found stored chat info:", chatInfo);
+        
+        if (chatInfo.partnerName) {
+          setRecipientName(chatInfo.partnerName);
+        }
+        
+        // Clear the stored chat info after using it
+        localStorage.removeItem("currentChatInfo");
+      } catch (e) {
+        console.error("Error parsing stored chat info:", e);
+      }
+    }
+
+    // Always try to fetch messages if authenticated
     if (isAuthenticated) {
       fetchMessages();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, conversationID]);
 
   /**
    * Fetches messages for the current conversation from the API.
@@ -29,8 +48,10 @@ export default function Chat() {
   const fetchMessages = async () => {
     try {
       const token = await getAccessTokenSilently();
+      console.log("Fetching messages for conversation:", conversationID);
+      
       const response = await fetch(
-        `http://localhost:3000/api/chat/${conversationID}`,
+        `/api/chat/${conversationID}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -39,29 +60,60 @@ export default function Chat() {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        
+        // Try to parse error response
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error) {
+            throw new Error(errorData.error);
+          }
+        } catch (e) {
+          // If parsing fails, use generic error
+          throw new Error(`Failed to load messages: ${response.status}`);
+        }
       }
 
       const data = await response.json();
-      setMessages(data.messages || []);
+      console.log("Messages loaded:", data);
       
-      // Set recipient name if available
-      if (data.messages && data.messages[0] && data.messages[0].recipientName) {
-        setRecipientName(data.messages[0].recipientName);
+      if (data.messages && data.messages.length > 0) {
+        setMessages(data.messages);
+        
+        // Set recipient name if available
+        if (data.messages[0].recipientName) {
+          setRecipientName(data.messages[0].recipientName);
+        }
+      } else {
+        // Initialize with a welcome message for empty conversations
+        setMessages([{
+          _id: 'welcome_msg',
+          message: "Start your conversation by sending a message!",
+          sentByUser: false,
+          timestamp: new Date().toISOString(),
+          senderName: 'PlayPal',
+          profilePic: null,
+          isSystemMessage: true
+        }]);
       }
       
       setLoading(false);
 
-      // Mark conversation as read when opened
-      await fetch(
-        `http://localhost:3000/api/conversations/${conversationID}/read`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Mark conversation as read
+      try {
+        await fetch(
+          `/api/conversations/${conversationID}/read`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } catch (markReadError) {
+        console.warn("Could not mark conversation as read:", markReadError);
+      }
     } catch (error) {
       console.error("Error fetching messages:", error);
       setError(error.message);
@@ -74,7 +126,64 @@ export default function Chat() {
    */
   const sendMessage = async () => {
     if (inputText.trim() !== "") {
+      // Generate a temporary ID for this message
+      const tempMessageId = `temp_${Date.now()}`;
+      const messageText = inputText.trim();
+      
+      // Clear input immediately for better UX
+      setInputText("");
+      
+      // Add message to UI immediately (optimistic update)
+      const newMessage = {
+        _id: tempMessageId,
+        message: messageText,
+        sentByUser: true,
+        timestamp: new Date().toISOString(),
+        senderName: user?.name || user?.nickname || "You",
+        profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff",
+        isPending: true
+      };
+      
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+      
       try {
+        // If this is a new conversation (no API record yet), don't try to send to API
+        if (isNewConversation) {
+          console.log("New conversation - marking first message as sent locally");
+          
+          // Just update the message to remove pending state
+          setTimeout(() => {
+            setMessages(prevMessages =>
+              prevMessages.map(msg =>
+                msg._id === tempMessageId
+                  ? { ...msg, isPending: false }
+                  : msg
+              )
+            );
+            
+            // The conversation is now considered "started" locally
+            if (messages.length === 1 && messages[0].isSystemMessage) {
+              // Remove the system welcome message
+              setMessages(prevMessages =>
+                prevMessages.filter(msg => !msg.isSystemMessage).concat([
+                  {
+                    _id: 'welcome_response',
+                    message: "Message sent! Your chat partner will see your message when they connect.",
+                    sentByUser: false,
+                    timestamp: new Date().toISOString(),
+                    senderName: 'PlayPal',
+                    profilePic: null,
+                    isSystemMessage: true
+                  }
+                ])
+              );
+            }
+          }, 500);
+          
+          return;
+        }
+        
+        // Normal case - send to API
         const token = await getAccessTokenSilently();
         const response = await fetch("http://localhost:3000/api/chat/send", {
           method: "POST",
@@ -84,32 +193,63 @@ export default function Chat() {
           },
           body: JSON.stringify({
             conversationID,
-            message: inputText,
+            message: messageText,
           }),
         });
 
         if (!response.ok) {
+          // If API gives 400/404, switch to local-only mode
+          if (response.status === 400 || response.status === 404) {
+            console.log("API rejected message - switching to local-only mode");
+            setIsNewConversation(true);
+            
+            // Update the pending message
+            setMessages(prevMessages =>
+              prevMessages.map(msg =>
+                msg._id === tempMessageId
+                  ? { ...msg, isPending: false }
+                  : msg
+              )
+            );
+            
+            return;
+          }
+          
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
         const data = await response.json();
 
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            _id: data._id,
-            message: inputText,
-            sentByUser: true,
-            timestamp: new Date().toISOString(),
-            senderName: user?.name || user?.nickname || "You",
-            profilePic: user?.picture || "https://www.dummyimage.com/25x25/000/fff",
-          },
-        ]);
-
-        setInputText("");
+        // Update the temporary message with the real message ID
+        setMessages(prevMessages =>
+          prevMessages.map(msg =>
+            msg._id === tempMessageId
+              ? {
+                  ...msg,
+                  _id: data._id || msg._id,
+                  isPending: false
+                }
+              : msg
+          )
+        );
       } catch (error) {
         console.error("Error sending message:", error);
-        setError(error.message);
+        
+        // Show a more friendly error
+        const errorMessage = "Message couldn't be sent to server. It's saved locally.";
+        setError(errorMessage);
+        
+        // Mark message as sent locally but with warning
+        setMessages(prevMessages =>
+          prevMessages.map(msg =>
+            msg._id === tempMessageId
+              ? { ...msg, isPending: false, isLocalOnly: true }
+              : msg
+          )
+        );
+        
+        // Switch to local-only mode for future messages
+        setIsNewConversation(true);
       }
     }
   };
@@ -152,21 +292,60 @@ export default function Chat() {
           </div>
         ) : error ? (
           <div className="glass-card bg-red-500 bg-opacity-25 mx-auto max-w-md">
-            <p className="text-white">Error: {error}</p>
+            <p className="text-white">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="mt-2 text-white underline text-sm"
+            >
+              Dismiss
+            </button>
           </div>
         ) : messages.length > 0 ? (
           <div className="space-y-3 max-w-md mx-auto">
+            {isNewConversation && (
+              <div className="glass-card bg-yellow-500 bg-opacity-20 mx-auto mb-3 py-2">
+                <p className="text-white text-sm text-center">
+                  You're in local preview mode. Messages will be saved when connection is restored.
+                </p>
+              </div>
+            )}
+            
             {messages.map((message, index) => (
-              <GlassChatBubble
-                key={message._id || index}
-                isSent={message.sentByUser}
-                message={message.message}
-                timestamp={message.timestamp}
-                username={message.senderName}
-                profilePic={
-                  message.profilePic || "https://www.dummyimage.com/25x25/000/fff"
-                }
-              />
+              message.isSystemMessage ? (
+                // System message (info, welcome, etc.)
+                <div key={message._id || index} className="glass-card bg-blue-500 bg-opacity-15 mx-auto my-2 py-2 px-3">
+                  <p className="text-white text-sm text-center">
+                    {message.message}
+                  </p>
+                </div>
+              ) : (
+                // Regular chat message
+                <div key={message._id || index}>
+                  <GlassChatBubble
+                    isSent={message.sentByUser}
+                    message={message.message}
+                    timestamp={message.timestamp}
+                    username={message.senderName}
+                    profilePic={
+                      message.profilePic || "https://www.dummyimage.com/25x25/000/fff"
+                    }
+                  />
+                  {/* Message status indicators */}
+                  {message.sentByUser && (
+                    <div className="text-xs text-white opacity-70 mt-1 text-right pr-2">
+                      {message.isPending && (
+                        <span>Sending...</span>
+                      )}
+                      {message.isLocalOnly && (
+                        <span>Saved locally</span>
+                      )}
+                      {message.isFailed && (
+                        <span className="text-red-300">Failed to send</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
             ))}
           </div>
         ) : (

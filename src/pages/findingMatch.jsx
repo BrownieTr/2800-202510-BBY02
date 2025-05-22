@@ -43,7 +43,10 @@ export default function FindingMatch() {
           // Save match data to use in the next screen
           localStorage.setItem("matchData", JSON.stringify(matchData));
           // Navigate to the match screen
-          navigate("/match");
+          // Force a slight delay to ensure state is saved before navigation
+          setTimeout(() => {
+            navigate("/match");
+          }, 300);
         }
       );
 
@@ -62,6 +65,7 @@ export default function FindingMatch() {
         }
       }, 10000)
 
+
       // Clean up when component unmounts
       return () => {
         if (controller) {
@@ -71,7 +75,7 @@ export default function FindingMatch() {
         clearInterval(quoter);
       };
     }
-  }, [isAuthenticated, getAccessTokenSilently, navigate, sport]);
+  }, [isAuthenticated, getAccessTokenSilently, navigate, sport, distance, skillLevel, mode, matchType]);
 
   // Format the search time as mm:ss
   const formatTime = (seconds) => {
@@ -96,6 +100,7 @@ export default function FindingMatch() {
       navigate("/home");
     }
   };
+
 
   // Back icon
   const backIcon = (
@@ -167,6 +172,7 @@ export default function FindingMatch() {
             <p className="italic">{quote}</p>
           </div>
           
+          {/* Action buttons */}
           {/* Cancel button */}
           <GlassButton
             className="w-full bg-red-500 bg-opacity-30 mt-6 py-4"

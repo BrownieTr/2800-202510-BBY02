@@ -91,34 +91,48 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
       
       // If we found a match
       if (data.matchFound) {
-        // Stop checking
-        clearInterval(searchTimer);
+        console.log('Match found in matchmaking service!', data.match);
         
-        // Call the callback with match data
-        if (onMatchFound) {
-          onMatchFound(data.match);
+        // Stop checking immediately
+        if (searchTimer) {
+          clearInterval(searchTimer);
+          searchTimer = null;
         }
         
+        // Ensure the match data has all required fields
+        const matchData = {
+          ...data.match,
+          matchId: data.match.matchId || `match_${Date.now()}`
+        };
+        
+        // Call the callback with match data after a short delay
+        // This helps ensure all async operations have completed
+        setTimeout(() => {
+          if (onMatchFound) {
+            onMatchFound(matchData);
+          }
+        }, 100);
+        
         return true;
-      } else {
-        console.log('Still looking for a match...');
-        return false;
       }
+      
+      return false;
     } catch (error) {
       console.error('Error checking for match:', error);
       return false;
     }
   };
   
-  // Start checking immediately and then every 5 seconds
+  // Start checking immediately and then every 3 seconds
   checkForMatch();
-  searchTimer = setInterval(checkForMatch, 5000);
+  searchTimer = setInterval(checkForMatch, 3000);
   
   // Return an object with functions to control the search
   return {
     cancelSearch: () => {
       if (searchTimer) {
         clearInterval(searchTimer);
+        searchTimer = null;
       }
     }
   };
