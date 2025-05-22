@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import ClickableIcons from "../ui/clickableIcons";
+import Button from "../ui/button";
+import { useState } from "react";
 
 export default function Navbar({
   iconLeft,
@@ -23,7 +25,7 @@ export default function Navbar({
         <ClickableIcons icon={iconRight} to={iconRightTo} />
       </div>
       <div className="text-right">
-        <ClickableIcons icon={iconRight2} to={iconRight2To} />
+        <Button onClick={iconRight2To}> {iconRight2} </Button>
       </div>
     </nav>
   );

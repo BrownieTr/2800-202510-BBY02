@@ -1,4 +1,3 @@
-import React from "react";
 import Navbar from "../components/layout/navbar";
 import ClickableIcons from "../components/ui/clickableIcons";
 import { useState } from "react";
