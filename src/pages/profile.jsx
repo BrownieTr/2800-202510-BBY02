@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import Options from '../sections/options.jsx';
 import Profile_Details from '../sections/profile_details.jsx';
 import BackButton from '../components/ui/backButton.jsx';
+import LogoutPopUp from '../components/ui/logoutPopUp.jsx';
 
 export default function Profile() {
     // Define strokeWidth here as a constant at the component level
@@ -44,18 +44,14 @@ export default function Profile() {
     }, [isAuthenticated, getAccessTokenSilently]);
     
     const handleOptionClick = (whichOptionClicked) => {
-        if (whichOptionClicked === 1) {
-            // Dark mode toggle
-            setDarkMode(prev => !prev);
-        } else if (whichOptionClicked === 2) {
-            setView("details");
-        } else if (whichOptionClicked === 3) {
-            setView("settings");
-        } else {
-            setView("profile");
+        switch (whichOptionClicked) {
+            case 1: break;
+            case 2: setView("details"); break;
+            case 3: setView("settings"); break;
+            case 4: setView("logout"); break;
+            default: setView("profile"); break;
         }
     };
-
     
     const handleProfileUpdate = (updatedData) => {
         setUserData(prevData => ({
@@ -135,6 +131,7 @@ export default function Profile() {
                     />
                 )}
                 {view === "settings" && <div>Settings</div>}
+                {view === "logout" && (<LogoutPopUp onOptionClick={handleOptionClick}/>)}
             </main>
         </div>
     );

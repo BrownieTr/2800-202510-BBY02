@@ -110,8 +110,8 @@ export default function ProfileEditForm({ userData, onSave, onCancel }) {
       </div>
 
       <div className="flex justify-end gap-4">
-        <Button type="button" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">Save</Button>
+        <Button className="bg-blue-600 hover:bg-blue-700"  onClick={onCancel}>Cancel</Button>
+        <Button className="bg-blue-600 hover:bg-blue-700" type="submit">Save</Button>
       </div>
     </form>
   );
