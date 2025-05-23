@@ -13,7 +13,7 @@ export default function NotificationBell() {
   const fetchUnreadMessages = async () => {
     try {
       const token = await getAccessTokenSilently();
-      const response = await fetch("http://localhost:3000/api/notifications/messages/unread", {
+      const response = await fetch("/api/notifications/messages/unread", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -35,7 +35,7 @@ export default function NotificationBell() {
   const markAsRead = async (notificationId) => {
     try {
       const token = await getAccessTokenSilently();
-      await fetch(`http://localhost:3000/api/notifications/messages/${notificationId}/read`, {
+      await fetch(`/api/notifications/messages/${notificationId}/read`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

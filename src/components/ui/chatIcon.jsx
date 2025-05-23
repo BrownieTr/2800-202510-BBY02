@@ -11,13 +11,13 @@ export default function ChatIcon() {
     try {
       const token = await getAccessTokenSilently();
       const [conversationsResponse, userResponse] = await Promise.all([
-        fetch("http://localhost:3000/api/conversations", {
+        fetch("/api/conversations", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
           cache: "no-store",
         }),
-        fetch("http://localhost:3000/api/profile", {
+        fetch("/api/profile", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -37,10 +37,11 @@ export default function ChatIcon() {
       ]);
 
       const conversations = conversationsData.conversations || [];
+      const currentUser = userData; 
 
       // Check if any conversation has unread messages not sent by current user
       const hasUnreadMessages = conversations.forEach((element) => {
-        if (element.sender !== user._id && element.unread) {
+        if (element.sender !== currentUser._id && element.unread) {
           setHasUnread(true);
         }
       });
@@ -68,10 +69,10 @@ export default function ChatIcon() {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        height="24px"
+        height="20px"
         viewBox="0 -960 960 960"
-        width="24px"
-        fill="#000000"
+        width="20px"
+        fill="#FFFFFF"
       >
         <path d="M80-80v-720q0-33 23.5-56.5T160-880h404q-4 20-4 40t4 40H160v525l46-45h594v-324q23-5 43-13.5t37-22.5v360q0 33-23.5 56.5T800-240H240L80-80Zm80-720v480-480Zm600 80q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35Z" />
       </svg>
@@ -82,10 +83,10 @@ export default function ChatIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      height="24px"
+      height="20px"
       viewBox="0 -960 960 960"
-      width="24px"
-      fill="#000000"
+      width="20px"
+      fill="#FFFFFF"
     >
       <path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
     </svg>
