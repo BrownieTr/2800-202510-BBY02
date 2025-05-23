@@ -172,7 +172,7 @@ export default function Events() {
   }
 
   return (
-    <div>
+    <>
       {/* Background decoration */}
       <div className="bg-circle bg-circle-1"></div>
       <div className="bg-circle bg-circle-2"></div>
@@ -239,6 +239,6 @@ export default function Events() {
       </div>
       
       <GlassTabBar />
-    </div>
+    </>
   );
 }
