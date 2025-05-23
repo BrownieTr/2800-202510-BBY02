@@ -8,6 +8,10 @@ import { getLoadingQuote } from "../services/ai"
 export default function FindingMatch() {
   const location = useLocation();
   // Get preferences from location state or use defaults
+  console.log(location.state);
+  // if (location.state) {
+
+  // }
   const { 
     sport = "Sport", 
     distance = 5, 
@@ -54,7 +58,7 @@ export default function FindingMatch() {
 
       const quoter = setInterval(async () => {
         try {
-          setQuote(await getLoadingQuote(sport, 'tip'))
+          setQuote(await getLoadingQuote(sport, 'tip', import.meta.env.VITE_AI_URI))
         } catch {
 
         }
