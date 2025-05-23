@@ -174,8 +174,12 @@ export default function Events() {
   return (
     <>
       {/* Background decoration */}
-      <div className="bg-circle bg-circle-1"></div>
-      <div className="bg-circle bg-circle-2"></div>
+      <div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] 
+      bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
+      </div>
+      <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px] 
+      bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
+      </div>
       
       <GlassNavbar
         title="Events"
@@ -216,7 +220,7 @@ export default function Events() {
           )}
           
           <GlassButton
-            className="fixed bottom-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+            className="fixed bottom-20 right-6 w-16 h-14 rounded-full flex items-center justify-center shadow-lg"
             onClick={() => navigate("/createEvent")}
             style={{zIndex: 99}}
           >
