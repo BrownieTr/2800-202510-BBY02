@@ -8,7 +8,10 @@ export default function GlassEventCard({
   time, 
   location, 
   participants,
-  onJoin 
+  onJoin,
+  onViewDetails,
+  isUserParticipating = false, // NEW: Flag to determine if user has joined
+  eventId // NEW: Event ID for actions
 }) {
   return (
     <div className="glass-card event-card">
@@ -25,7 +28,7 @@ export default function GlassEventCard({
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          <span>{time}</span>
+          <span>{time || "Time TBD"}</span>
         </div>
         
         <div className="event-detail">
@@ -48,9 +51,22 @@ export default function GlassEventCard({
       </div>
       
       <div className="event-actions">
-        <GlassButton onClick={onJoin}>
-          Join
-        </GlassButton>
+        {/* UPDATED: Conditional button rendering based on participation status */}
+        {isUserParticipating ? (
+          <GlassButton 
+            className="bg-blue-500 bg-opacity-30"
+            onClick={() => onViewDetails && onViewDetails(eventId)}
+          >
+            View Details
+          </GlassButton>
+        ) : (
+          <GlassButton 
+            className="bg-green-500 bg-opacity-30"
+            onClick={() => onJoin && onJoin(eventId)}
+          >
+            Join
+          </GlassButton>
+        )}
       </div>
     </div>
   );

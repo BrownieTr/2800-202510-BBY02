@@ -1,25 +1,17 @@
 /**
- * Sports Matchmaking Service
+ * Sports Matchmaking Service - FIXED VERSION
  * Handles finding matches, creating games, and managing the matchmaking queue
  */
 
 /**
  * Save a user's matchmaking preferences to the database
- * @param {string} sport - Which sport they want to play
- * @param {number} distance - How far they're willing to travel for a match in km
- * @param {string} skillLevel - Their skill level
- * @param {string} mode - Game mode
- * @param {string} matchType - Type of match
- * @param {function} getAccessTokenSilently - Auth0 function to get token
  */
 export async function saveMatchPreferences(sport, distance, latitude, longitude, skillLevel, mode, matchType, getAccessTokenSilently) {
   try {
     console.log("Saving preferences:", { sport, distance, latitude, longitude, skillLevel, mode, matchType });
     
     const token = await getAccessTokenSilently();
-    console.log("Got token (first 20 chars):", token.substring(0, 20) + "...");
     
-    console.log("Sending request to:", '/api/matchmaking/save-preferences');
     const response = await fetch('/api/matchmaking/save-preferences', {
       method: 'POST',
       headers: { 
@@ -37,8 +29,6 @@ export async function saveMatchPreferences(sport, distance, latitude, longitude,
       })
     });
     
-    console.log("Response status:", response.status);
-    
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Error response body:", errorText);
@@ -46,7 +36,7 @@ export async function saveMatchPreferences(sport, distance, latitude, longitude,
     }
     
     const data = await response.json();
-    console.log("Response data:", data);
+    console.log("Preferences saved successfully:", data);
     
     return data.success;
   } catch (error) {
@@ -56,18 +46,22 @@ export async function saveMatchPreferences(sport, distance, latitude, longitude,
 }
 
 /**
- * FIXED: Start looking for a player to match with - prevents race conditions
- * @param {function} getAccessTokenSilently - Auth0 function to get token
- * @param {function} onMatchFound - Callback for when a match is found
- * @returns {Object} - Contains the cancel function
+ * FIXED: Start looking for a player to match with - better error handling and logging
  */
 export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
   let searchTimer = null;
-  let isSearching = true; // FIXED: Add flag to prevent race conditions
+  let isSearching = true;
+  let checkCount = 0;
   
   // Function to check for a match
   const checkForMatch = async () => {
-    if (!isSearching) return; // FIXED: Check if still searching
+    if (!isSearching) {
+      console.log("Search cancelled, stopping checks");
+      return;
+    }
+    
+    checkCount++;
+    console.log(`Match check #${checkCount}`);
     
     try {
       const token = await getAccessTokenSilently();
@@ -78,47 +72,64 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
         }
       });
       
+      console.log("Response status:", response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to check for match');
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
+      console.log("Match check response:", data);
       
       // If we found a match
-      if (data.matchFound && isSearching) { // FIXED: Double-check still searching
-        console.log('Match found in matchmaking service!', data.match);
+      if (data.matchFound && isSearching) {
+        console.log('🎉 Match found!', data.match);
         
-        isSearching = false; // FIXED: Stop searching immediately
+        isSearching = false; // Stop searching immediately
         
-        // Stop checking immediately
+        // Stop the interval
         if (searchTimer) {
           clearInterval(searchTimer);
           searchTimer = null;
+          console.log("Stopped match checking timer");
         }
         
         // Ensure the match data has all required fields
         const matchData = {
           ...data.match,
-          matchId: data.match.matchId || data.match.matchID || `match_${Date.now()}`
+          matchId: data.match.matchId || data.match.matchID || data.match._id
         };
         
-        // FIXED: Call the callback with match data after a short delay
-        // This helps ensure all async operations have completed
+        console.log("Processed match data:", matchData);
+        
+        // Call the callback with match data
         setTimeout(() => {
-          if (onMatchFound && isSearching !== false) { // Double check
+          if (onMatchFound) {
+            console.log("Calling onMatchFound callback");
             onMatchFound(matchData);
           }
-        }, 50); // Reduced delay for faster response
+        }, 100);
         
         return true;
+      } else {
+        console.log("No match found yet. Reason:", data.reason || "Unknown");
+        return false;
+      }
+    } catch (error) {
+      console.error('Error checking for match:', error);
+      
+      // Don't stop searching on network errors, but log them
+      if (error.message.includes('500')) {
+        console.error('Server error - check backend logs');
       }
       
       return false;
-    } catch (error) {
-      console.error('Error checking for match:', error);
-      return false;
     }
   };
+  
+  console.log("Starting match search...");
   
   // Start checking immediately and then every 3 seconds
   checkForMatch();
@@ -127,7 +138,8 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
   // Return an object with functions to control the search
   return {
     cancelSearch: () => {
-      isSearching = false; // FIXED: Set flag
+      console.log("Cancelling match search");
+      isSearching = false;
       if (searchTimer) {
         clearInterval(searchTimer);
         searchTimer = null;
@@ -138,7 +150,6 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
 
 /**
  * Cancel current matchmaking and leave the queue
- * @param {function} getAccessTokenSilently - Auth0 function to get token
  */
 export async function cancelMatchmaking(getAccessTokenSilently) {
   try {
@@ -158,6 +169,7 @@ export async function cancelMatchmaking(getAccessTokenSilently) {
     }
     
     const result = await response.json();
+    console.log("Left matchmaking queue:", result);
     return result.success;
   } catch (error) {
     console.error('Error canceling matchmaking:', error);
@@ -167,11 +179,10 @@ export async function cancelMatchmaking(getAccessTokenSilently) {
 
 /**
  * Get details of a specific match
- * @param {string} matchId - ID of the match to get
- * @param {function} getAccessTokenSilently - Auth0 function to get token
  */
 export async function getMatchDetails(matchId, getAccessTokenSilently) {
   try {
+    console.log("Getting match details for:", matchId);
     const token = await getAccessTokenSilently();
     
     const response = await fetch(`/api/matchmaking/match/${matchId}`, {
@@ -181,11 +192,16 @@ export async function getMatchDetails(matchId, getAccessTokenSilently) {
     });
     
     if (!response.ok) {
+      if (response.status === 404) {
+        console.log("Match not found");
+        return null;
+      }
       throw new Error('Failed to get match details');
     }
     
     const data = await response.json();
-    return data.match; // Return the match object directly
+    console.log("Match details:", data);
+    return data.match;
   } catch (error) {
     console.error('Error getting match details:', error);
     throw error;
@@ -194,10 +210,10 @@ export async function getMatchDetails(matchId, getAccessTokenSilently) {
 
 /**
  * Get all active matches for the current user
- * @param {function} getAccessTokenSilently - Auth0 function to get token
  */
 export async function getUserMatches(getAccessTokenSilently) {
   try {
+    console.log("Getting user matches...");
     const token = await getAccessTokenSilently();
     
     const response = await fetch('/api/matchmaking/user-matches', {
@@ -211,6 +227,7 @@ export async function getUserMatches(getAccessTokenSilently) {
     }
     
     const data = await response.json();
+    console.log("User matches:", data.matches);
     return data.matches;
   } catch (error) {
     console.error('Error getting user matches:', error);

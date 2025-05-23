@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import GlassChatBubble from "../components/ui/glassChatBubble";
@@ -29,6 +29,7 @@ export default function Chat() {
   const { conversationID } = useParams();
   const [inputText, setInputText] = useState("");
   const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
 
   // Fetch messages when the user is authenticated
   useEffect(() => {
@@ -37,6 +38,11 @@ export default function Chat() {
       fetchMessages();
     }
   }, [isAuthenticated]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   /**
    * Fetches current user information (placeholder function)
@@ -242,6 +248,10 @@ export default function Chat() {
     }
   };
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // Show loading while Auth0 is initializing
   if (isLoading) {
     return (
@@ -269,7 +279,7 @@ export default function Chat() {
       <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px]
       bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
       </div>
-      
+    
       {/* FIXED: Navbar with correct props */}
       <GlassNavbar
         title={messages.find(m => !m.sentByUser)?.senderName || "Chat"} // FIXED: Use 'title' instead of 'header'
@@ -278,7 +288,7 @@ export default function Chat() {
       />
       
       {/* Scrollable message area - takes up all available space */}
-      <div className="flex-grow overflow-y-auto px-2 pt-14 pb-24 pt-2">
+      <div className="flex-grow overflow-y-auto px-2 pb-24 pt-2">
         {loading ? (
           <div className="flex justify-center items-center h-48 text-white">
             <div className="w-10 h-10 relative">
@@ -347,6 +357,9 @@ export default function Chat() {
                 </div>
               )
             ))}
+            
+            {/* Invisible element to scroll to */}
+            <div ref={messagesEndRef} />
           </div>
         ) : (
           <div className="glass-card text-center mx-auto max-w-md">

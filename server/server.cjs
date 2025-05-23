@@ -161,46 +161,80 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
 
     const db = connect.db();
 
+    // Get the user's preferences
     const myPreferences = await db.collection('matchPreferences').findOne({ userId: userId });
+    console.log("My preferences:", myPreferences);
 
     if (!myPreferences) {
-      return res.json({ matchFound: false });
+      console.log("No preferences found for user");
+      return res.json({ matchFound: false, reason: "No preferences set" });
     }
 
-    const matchWithinDistance = []
+    // Validate required fields
+    if (!myPreferences.latitude || !myPreferences.longitude) {
+      console.log("Missing location data");
+      return res.json({ matchFound: false, reason: "Missing location data" });
+    }
+
+    const matchWithinDistance = [];
     const matchDistanceArray = await db.collection('matchPreferences')
-      .find({ userId: { $ne: userId } })
+      .find({ userId: { $ne: userId } }) // Exclude current user
       .project({ distance: 1, latitude: 1, longitude: 1, userId: 1 })
       .toArray();
 
-    for (const item of matchDistanceArray) {
-      if (item.latitude && item.longitude) {
-        const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, item.latitude, item.longitude);
+    console.log("Found other users:", matchDistanceArray.length);
 
-        if (distance < myPreferences.distance && distance < item.distance) {
+    for (const item of matchDistanceArray) {
+      if (item.latitude && item.longitude) { // Check if coordinates exist
+        const distance = calculateDistance(
+          myPreferences.latitude,
+          myPreferences.longitude,
+          item.latitude,
+          item.longitude
+        );
+        console.log(`Distance to ${item.userId}: ${distance}km`);
+
+        if (distance <= myPreferences.distance && distance <= item.distance) {
           matchWithinDistance.push(item.userId);
+          console.log(`User ${item.userId} is within distance range`);
         }
       }
     }
 
+    console.log("Users within distance:", matchWithinDistance);
+
+    if (matchWithinDistance.length === 0) {
+      return res.json({ matchFound: false, reason: "No users within distance" });
+    }
+
+    // Look for other users with matching preferences
     const potentialMatch = await db.collection('matchPreferences').findOne({
-      userId: { $in: matchWithinDistance },
+      userId: { $in: matchWithinDistance }, // Must be within distance
       sport: myPreferences.sport,
       skillLevel: myPreferences.skillLevel,
       mode: myPreferences.mode,
       matchType: myPreferences.matchType
     });
 
+    console.log("Potential match found:", potentialMatch);
+
     if (!potentialMatch) {
-      return res.json({ matchFound: false });
+      return res.json({ matchFound: false, reason: "No matching preferences" });
     }
 
     const user1 = myPreferences;
     const user2 = potentialMatch;
-    console.log("USER 1: ", user1)
-    console.log("USER 2: ", user2)
-    const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, potentialMatch.latitude, potentialMatch.longitude);
+    console.log("USER 1:", user1);
+    console.log("USER 2:", user2);
+    
+    const distance = calculateDistance(
+      myPreferences.latitude,
+      myPreferences.longitude,
+      potentialMatch.latitude,
+      potentialMatch.longitude
+    );
 
+    // Create the match
     const matchData = {
       matchID: `match_${userId}_${potentialMatch.userId}_${Date.now()}`,
       player1: userId,
@@ -208,27 +242,42 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
       player2: potentialMatch.userId,
       player2Name: user2 ? user2.name : 'Unknown Player',
       sport: myPreferences.sport,
-      distance: distance,
+      distance: Math.round(distance * 100) / 100, // Round to 2 decimal places
       skillLevel: myPreferences.skillLevel,
       mode: myPreferences.mode,
       matchType: myPreferences.matchType,
-      timestamp: new Date().toLocaleString(),
-      status: 'pending'
+      timestamp: new Date().toISOString(), // Use ISO string for consistency
+      status: 'pending',
+      createdAt: new Date()
     };
 
-    await db.collection('matches').insertOne(matchData);
+    console.log("Creating match:", matchData);
 
-    await db.collection('matchPreferences').deleteMany({
+    // Save match to database
+    const matchResult = await db.collection('matches').insertOne(matchData);
+    console.log("Match saved with ID:", matchResult.insertedId);
+
+    // Remove both users from matchmaking queue
+    const deleteResult = await db.collection('matchPreferences').deleteMany({
       userId: { $in: [userId, potentialMatch.userId] }
     });
+    console.log("Removed from queue:", deleteResult.deletedCount, "users");
 
     return res.json({
       matchFound: true,
-      match: matchData
+      match: {
+        ...matchData,
+        _id: matchResult.insertedId
+      }
     });
   } catch (error) {
     console.error('Error checking for matches:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -276,17 +325,20 @@ app.get('/api/matchmaking/user-matches', jwtCheck, async (req, res) => {
 
     const db = connect.db();
 
+    // Find matches where user is player1 or player2
     const matches = await db.collection('matches').find({
       $or: [
         { player1: userId },
         { player2: userId }
       ]
-    }).toArray();
+    }).sort({ createdAt: -1 }).toArray(); // Sort by newest first
+
+    console.log(`Found ${matches.length} matches for user ${userId}`);
 
     res.json({ matches: matches });
   } catch (error) {
     console.error('Error getting user matches:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', message: error.message });
   }
 });
 
@@ -295,16 +347,30 @@ app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
     const matchId = req.params.matchId;
     const db = connect.db();
 
-    const match = await db.collection('matches').findOne({ matchID: matchId });
+    console.log("Looking for match with ID:", matchId);
+
+    // Try to find by matchID field first, then by _id
+    let match = await db.collection('matches').findOne({ matchID: matchId });
+    
+    if (!match) {
+      // Try by ObjectId if it's a valid ObjectId
+      try {
+        match = await db.collection('matches').findOne({ _id: new ObjectId(matchId) });
+      } catch (objectIdError) {
+        // Not a valid ObjectId, that's fine
+      }
+    }
 
     if (!match) {
+      console.log("Match not found");
       return res.status(404).json({ error: 'Match not found' });
     }
 
+    console.log("Found match:", match);
     res.json({ match: match });
   } catch (error) {
     console.error('Error getting match details:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', message: error.message });
   }
 });
 
