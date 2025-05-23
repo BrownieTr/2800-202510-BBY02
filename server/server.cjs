@@ -634,7 +634,6 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
     if (enhancedMessages.length === 0) {
       return res.json({
         recipientName: recipientName ? recipientName.name : 'Unknown User',
-        messages: []
       });
     }
 
