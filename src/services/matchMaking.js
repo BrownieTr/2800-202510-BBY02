@@ -66,24 +66,77 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
     try {
       const token = await getAccessTokenSilently();
       
+      // First check if user still has preferences (if they don't, they've been matched)
+      const preferencesResponse = await fetch('/api/matchmaking/check-preferences', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!preferencesResponse.ok) {
+        console.error("Failed to check preferences");
+        return false;
+      }
+
+      const preferencesData = await preferencesResponse.json();
+      console.log("Preferences check response:", preferencesData);
+
+      // If preferences don't exist, user has been matched - check their matches
+      if (!preferencesData.hasPreferences) {
+        console.log("Preferences don't exist - user has been matched!");
+        const userMatchesResponse = await fetch('/api/matchmaking/user-matches', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (userMatchesResponse.ok) {
+          const userMatchesData = await userMatchesResponse.json();
+          console.log("User matches response:", userMatchesData);
+
+          if (userMatchesData.matches && userMatchesData.matches.length > 0) {
+            const latestMatch = userMatchesData.matches[0];
+            console.log("Found match:", latestMatch);
+
+            isSearching = false;
+            if (searchTimer) {
+              clearInterval(searchTimer);
+              searchTimer = null;
+              console.log("Stopped match checking timer");
+            }
+
+            setTimeout(() => {
+              if (onMatchFound) {
+                console.log("Calling onMatchFound with match");
+                onMatchFound(latestMatch);
+              }
+            }, 100);
+
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // User still has preferences - check for matches with other players
       const response = await fetch('/api/matchmaking/check-for-match', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       console.log("Response status:", response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response:", errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
-      
+
       const data = await response.json();
       console.log("Match check response:", data);
-      
-      // If we found a match
+
+      // If we found a match with another player
       if (data.matchFound && isSearching) {
         console.log('🎉 Match found!', data.match);
         
@@ -114,7 +167,7 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
         
         return true;
       } else {
-        console.log("No match found yet. Reason:", data.reason || "Unknown");
+        console.log("No match found with other players. Reason:", data.reason || "Unknown");
         return false;
       }
     } catch (error) {

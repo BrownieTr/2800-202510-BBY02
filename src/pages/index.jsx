@@ -205,7 +205,7 @@ export default function Index() {
               </div>
             ) : matches && matches.length > 0 ? (
               <div className="space-y-4">
-                {matches.map((match, index) => {
+                {matches.slice(0, 3).map((match, index) => {
                   const isPlayer1 = userData && match.player1 && userData.sub === match.player1;
                   const partnerName = isPlayer1 ? match.player2Name : match.player1Name;
                   
@@ -233,6 +233,17 @@ export default function Index() {
                     </div>
                   );
                 })}
+                
+                {matches.length > 3 && (
+                  <div className="text-center">
+                    <GlassButton
+                      className="px-6 py-2"
+                      onClick={() => navigate("/match-history")}
+                    >
+                      View All Matches ({matches.length})
+                    </GlassButton>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="glass-card text-center p-4 mb-6">
