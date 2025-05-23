@@ -409,6 +409,28 @@ app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
   }
 });
 
+app.get('/api/matchmaking/check-preferences', jwtCheck, async (req, res) => {
+  try {
+    const userId = req.auth.payload.sub;
+    console.log("Checking preferences for user:", userId);
+
+    const db = connect.db();
+
+    // Check if user has matchmaking preferences set
+    const preferences = await db.collection('matchPreferences').findOne({ userId: userId });
+    
+    console.log("User preferences found:", preferences ? "Yes" : "No");
+
+    res.json({ 
+      hasPreferences: !!preferences,
+      preferences: preferences || null
+    });
+  } catch (error) {
+    console.error('Error checking preferences:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+});
+
 app.get('/api/conversations', jwtCheck, async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
