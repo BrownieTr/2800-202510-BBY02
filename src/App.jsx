@@ -8,7 +8,6 @@ import Chat from "./pages/chat";
 import ProtectedRoute from "./services/protectedRoutes";
 import Messages from "./pages/messages";
 import CreateEvent from "./pages/createEvent";
-import FavSport from "./pages/favSport";
 import FindingMatch from "./pages/findingMatch";
 import MatchDetails from "./pages/MatchDetails";
 import MatchPreferences from "./pages/MatchPreferences";
@@ -87,14 +86,6 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateEvent />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/favSport"
-          element={
-            <ProtectedRoute>
-              <FavSport />
             </ProtectedRoute>
           }
         />

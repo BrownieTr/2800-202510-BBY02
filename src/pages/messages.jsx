@@ -135,10 +135,8 @@ export default function Messages() {
       <GlassNavbar
         title="Messages"
         leftIcon={backIcon}
-        rightIcon={profileIcon}
         rightIcon2={addIcon}
-        onLeftIconClick={() => navigate("/home")}
-        onRightIconClick={() => navigate("/profile")}
+        onLeftIconClick={() => navigate(-1)}
         onRightIcon2Click={() => navigate("/new-chat")}
       />
       
