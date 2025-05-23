@@ -57,7 +57,7 @@ export default function Events() {
         const token = await getAccessTokenSilently();
         
         // Fetch events from API
-        const response = await fetch('http://localhost:3000/api/events', {
+        const response = await fetch('http://localhost:10000/api/events', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
