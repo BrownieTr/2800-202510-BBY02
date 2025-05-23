@@ -171,7 +171,7 @@ export default function Index() {
               </div>
             ) : matches && matches.length > 0 ? (
               <div className="space-y-4">
-                {matches.map((match, index) => {
+                {matches.slice(0, 2).map((match, index) => {
                   const isPlayer1 = userData && match.player1 && userData.sub === match.player1;
                   const partnerName = isPlayer1 ? match.player2Name : match.player1Name;
                   
