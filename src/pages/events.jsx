@@ -96,7 +96,7 @@ export default function Events() {
     try {
       const token = await getAccessTokenSilently();
       
-      const response = await fetch(`http://localhost:3000/api/events/${eventId}/join`, {
+      const response = await fetch(`http://localhost:10000/api/events/${eventId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
