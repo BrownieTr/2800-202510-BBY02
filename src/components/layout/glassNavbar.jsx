@@ -1,16 +1,13 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-
 export default function GlassNavbar({
   title = "PlayPal",
   leftIcon,
   rightIcon,
   rightIcon2,
+  rightContent, 
   onLeftIconClick,
   onRightIconClick,
   onRightIcon2Click,
 }) {
-  const navigate = useNavigate();
 
   return (
     <header className="glass-navbar">
@@ -34,6 +31,8 @@ export default function GlassNavbar({
             </button>
           )}
         </div>
+
+        {rightContent && <div>{rightContent}</div>}
       </div>
     </header>
   );
