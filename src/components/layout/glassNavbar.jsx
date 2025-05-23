@@ -14,15 +14,13 @@ export default function GlassNavbar({
 
   return (
     <header className="glass-navbar">
-      <h1>{title}</h1>
-      
-      <div className="glass-navbar-actions">
-        {leftIcon && (
+      {leftIcon && (
           <button className="glass-icon-button" onClick={onLeftIconClick}>
             {leftIcon}
           </button>
         )}
-        
+      <h1>{title}</h1>
+      <div className="glass-navbar-actions">
         <div className="flex gap-2">
           {rightIcon && (
             <button className="glass-icon-button" onClick={onRightIconClick}>

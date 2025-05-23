@@ -106,9 +106,7 @@ export default function Index() {
       
       <GlassNavbar
         title="PlayPal"
-        rightIcon={profileIcon}
         rightIcon2={messageIcon}
-        onRightIconClick={() => navigate("/profile")}
         onRightIcon2Click={() => navigate("/messages")}
       />
       

@@ -106,7 +106,7 @@ export default function SportsBetting() {
         leftIcon={backIcon}
         rightIcon={profileIcon}
         rightIcon2={messageIcon}
-        onLeftIconClick={() => navigate("/home")}
+        onLeftIconClick={() => navigate(-1)}
         onRightIconClick={() => navigate("/profile")}
         onRightIcon2Click={() => navigate("/messages")}
       />

@@ -168,10 +168,8 @@ export default function Events() {
       <GlassNavbar
         title="Events"
         leftIcon={backIcon}
-        rightIcon={profileIcon}
         rightIcon2={messageIcon}
-        onLeftIconClick={() => navigate("/home")}
-        onRightIconClick={() => navigate("/profile")}
+        onLeftIconClick={() => navigate(-1)}
         onRightIcon2Click={() => navigate("/messages")}
       />
       
