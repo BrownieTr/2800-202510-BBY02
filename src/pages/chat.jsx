@@ -325,16 +325,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-teal-500">
-      {/* Background decoration */}
-      <div
-        className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] 
-      bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none"
-      ></div>
-      <div
-        className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px]
-      bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none"
-      ></div>
+    <div className="flex flex-col h-screen">
       <GlassNavbar
         title={messages.find((m) => !m.sentByUser)?.senderName || recipientName ||"Chat"}
         leftIcon={BackButton}
