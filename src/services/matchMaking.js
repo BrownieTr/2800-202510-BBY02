@@ -86,23 +86,13 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
       if (!preferencesData.hasPreferences) {
         console.log("✅ Preferences deleted - user has been matched! Fetching latest match...");
         
-        const userMatchesResponse = await fetch('/api/matchmaking/user-matches', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!userMatchesResponse.ok) {
-          console.error("Failed to fetch user matches:", userMatchesResponse.status);
-          return false;
-        }
-
-        const userMatchesData = await userMatchesResponse.json();
-        console.log("User matches response:", userMatchesData);
-
-        if (userMatchesData.matches && userMatchesData.matches.length > 0) {
-          // Get the most recent match (assuming they're sorted by creation date)
-          const latestMatch = userMatchesData.matches[0];
+        // Add a small delay to ensure the match has been fully created in the database
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Get the latest match using our helper function
+        const latestMatch = await getLatestUserMatch(getAccessTokenSilently);
+        
+        if (latestMatch) {
           console.log("🎉 Found latest match:", latestMatch);
 
           // Stop searching
@@ -117,7 +107,6 @@ export function startLookingForMatch(getAccessTokenSilently, onMatchFound) {
           const matchData = {
             ...latestMatch,
             matchId: latestMatch.matchId || latestMatch.matchID || latestMatch._id,
-            // Add any other field normalization here
           };
 
           console.log("Processed match data:", matchData);
@@ -279,6 +268,127 @@ export async function getMatchDetails(matchId, getAccessTokenSilently) {
   } catch (error) {
     console.error('Error getting match details:', error);
     throw error;
+  }
+}
+
+/**
+ * Parse a custom timestamp format like "2025-05-22, 8:32:58 p.m." into a Date object
+ */
+function parseCustomTimestamp(timestamp) {
+  if (!timestamp) return new Date(0);
+  
+  try {
+    // Handle the custom format: "2025-05-22, 8:32:58 p.m."
+    if (typeof timestamp === 'string' && timestamp.includes('p.m.') || timestamp.includes('a.m.')) {
+      // Replace p.m./a.m. with PM/AM for standard parsing
+      const standardFormat = timestamp
+        .replace('p.m.', 'PM')
+        .replace('a.m.', 'AM')
+        .replace(',', ''); // Remove the comma
+      
+      const date = new Date(standardFormat);
+      
+      // If that doesn't work, try manual parsing
+      if (isNaN(date.getTime())) {
+        // Extract parts: "2025-05-22, 8:32:58 p.m."
+        const parts = timestamp.split(',');
+        const datePart = parts[0].trim(); // "2025-05-22"
+        const timePart = parts[1].trim(); // "8:32:58 p.m."
+        
+        const [year, month, day] = datePart.split('-').map(Number);
+        const timeMatch = timePart.match(/(\d+):(\d+):(\d+)\s*(a\.m\.|p\.m\.)/);
+        
+        if (timeMatch) {
+          let [, hours, minutes, seconds, period] = timeMatch;
+          hours = parseInt(hours);
+          minutes = parseInt(minutes);
+          seconds = parseInt(seconds);
+          
+          // Convert to 24-hour format
+          if (period === 'p.m.' && hours !== 12) {
+            hours += 12;
+          } else if (period === 'a.m.' && hours === 12) {
+            hours = 0;
+          }
+          
+          return new Date(year, month - 1, day, hours, minutes, seconds);
+        }
+      }
+      
+      return date;
+    }
+    
+    // For standard ISO strings or other formats
+    return new Date(timestamp);
+  } catch (error) {
+    console.error('Error parsing timestamp:', timestamp, error);
+    return new Date(0);
+  }
+}
+/**
+ * Get the latest/most recent match for the current user
+ */
+export async function getLatestUserMatch(getAccessTokenSilently) {
+  try {
+    console.log("Getting latest user match...");
+    const token = await getAccessTokenSilently();
+    
+    // Try dedicated latest match endpoint first
+    try {
+      const latestResponse = await fetch('/api/matchmaking/latest-match', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (latestResponse.ok) {
+        const latestData = await latestResponse.json();
+        if (latestData.match) {
+          console.log("Found latest match from dedicated endpoint:", latestData.match);
+          return latestData.match;
+        }
+      }
+    } catch (error) {
+      console.log("Latest match endpoint not available, falling back to user-matches");
+    }
+    
+    // Fallback to getting all matches and sorting
+    const response = await fetch('/api/matchmaking/user-matches', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to get user matches');
+    }
+    
+    const data = await response.json();
+    const matches = data.matches || [];
+    
+    if (matches.length === 0) {
+      return null;
+    }
+    
+    // Sort by creation date to get the most recent
+    const sortedMatches = matches.sort((a, b) => {
+      const dateA = parseCustomTimestamp(a.timestamp || a.createdAt || a.created_at || a.dateCreated);
+      const dateB = parseCustomTimestamp(b.timestamp || b.createdAt || b.created_at || b.dateCreated);
+      return dateB - dateA; // Most recent first
+    });
+    
+    console.log("Matches with parsed dates:", matches.map(m => ({
+      id: m._id || m.matchId,
+      originalTimestamp: m.timestamp || m.createdAt || m.created_at || m.dateCreated,
+      parsedDate: parseCustomTimestamp(m.timestamp || m.createdAt || m.created_at || m.dateCreated),
+      sport: m.sport
+    })));
+    
+    console.log("Latest match from sorted results:", sortedMatches[0]);
+    return sortedMatches[0];
+  } catch (error) {
+    console.error('Error getting latest user match:', error);
+    return null;
   }
 }
 
