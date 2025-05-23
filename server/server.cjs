@@ -1,9 +1,6 @@
-
-
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
-const connect = require('./databaseConnection.cjs')
-// const calculateDistance = require('../src/services/locationService.jsx')
+const connect = require('./databaseConnection.cjs');
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -17,56 +14,61 @@ const jwtCheck = auth({
   tokenSigningAlg: 'RS256'
 });
 
-
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  // Convert all inputs to numbers
   lat1 = parseFloat(lat1);
   lon1 = parseFloat(lon1);
   lat2 = parseFloat(lat2);
   lon2 = parseFloat(lon2);
   
-  // Convert degrees to radians
   const lat1Rad = lat1 * Math.PI/180;
   const lon1Rad = lon1 * Math.PI/180;
   const lat2Rad = lat2 * Math.PI/180;
   const lon2Rad = lon2 * Math.PI/180;
   
-  // Calculate deltas
   const latDelta = lat2Rad - lat1Rad;
   const lonDelta = lon2Rad - lon1Rad;
   
-  // Haversine formula (already in radians)
   const a = Math.sin(latDelta/2) * Math.sin(latDelta/2) +
             Math.cos(lat1Rad) * Math.cos(lat2Rad) *
             Math.sin(lonDelta/2) * Math.sin(lonDelta/2);
   
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  
-  /**
-   * Average radius of earth, since radius at equator and radius at the poles differ
-   * @see https://en.wikipedia.org/wiki/Earth_radius
-   */
   const radius = 6371.2;
-  
-  // Calculate the distance
   const distance = radius * c;
   return distance;
 }
+
+// Basic middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(__dirname + "/public"));
 
-app.get('/users', jwtCheck, async (req, res) => {
+// Serve built React app from dist folder
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Health check (no auth needed)
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    port: PORT
+  });
+});
+
+// Apply JWT middleware to ALL /api routes ONLY
+app.use('/api', jwtCheck);
+
+// Non-API routes (no JWT required)
+app.get('/users', async (req, res) => {
   let db = connect.db();
   let data = await db.collection('users').find({}).toArray();
   res.send(data);
 });
 
-app.get('/api/profile', jwtCheck, async (req, res) => {
+// API Routes (JWT automatically applied via /api middleware)
+app.get('/api/profile', async (req, res) => {
   try {
     console.log("Full Auth0 token payload:", req.auth);
-
     const auth0Id = req.auth.payload?.sub;
     console.log("Auth0 ID extracted:", auth0Id);
 
@@ -78,13 +80,11 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
     }
 
     let db = connect.db();
-
     let user = await db.collection('users').findOne({ auth0Id: auth0Id });
     console.log("User found in DB:", user ? "Yes" : "No");
 
     if (!user) {
       console.log("Creating new user for Auth0 ID:", auth0Id);
-
       user = {
         auth0Id: auth0Id,
         name: "New User",
@@ -96,9 +96,7 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
         setUp: false,
         profilePic: ""
       };
-
       console.log("About to insert user:", user);
-
       const result = await db.collection('users').insertOne(user);
       console.log("Insert result:", result);
     } else {
@@ -112,13 +110,12 @@ app.get('/api/profile', jwtCheck, async (req, res) => {
   }
 });
 
-app.post('/api/profile/update', jwtCheck, async (req, res) => {
+app.post('/api/profile/update', async (req, res) => {
   try {
     const auth0Id = req.auth.payload.sub;
     const { name, address, country, preferences, setUp, profilePic, email } = req.body;
 
     let db = connect.db();
-
     const result = await db.collection('users').updateOne(
       { auth0Id: auth0Id },
       {
@@ -142,7 +139,7 @@ app.post('/api/profile/update', jwtCheck, async (req, res) => {
 });
 
 // Matchmaking Routes
-app.post('/api/matchmaking/save-preferences', jwtCheck, async (req, res) => {
+app.post('/api/matchmaking/save-preferences', async (req, res) => {
   try {
     console.log("Received save preferences request:");
     console.log("Auth info:", req.auth);
@@ -189,87 +186,51 @@ app.post('/api/matchmaking/save-preferences', jwtCheck, async (req, res) => {
   }
 });
 
-app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
+app.get('/api/matchmaking/check-for-match', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
     console.log("Checking for match for user:", userId);
 
     const db = connect.db();
-
-    // Get the user's preferences
     const myPreferences = await db.collection('matchPreferences').findOne({ userId: userId });
-    console.log("My preferences:", myPreferences);
 
     if (!myPreferences) {
-      console.log("No preferences found for user");
-      return res.json({ matchFound: false, reason: "No preferences set" });
-    }
-
-    // Validate required fields
-    if (!myPreferences.latitude || !myPreferences.longitude) {
-      console.log("Missing location data");
-      return res.json({ matchFound: false, reason: "Missing location data" });
+      return res.json({ matchFound: false });
     }
 
     const matchWithinDistance = [];
     const matchDistanceArray = await db.collection('matchPreferences')
-      .find({ userId: { $ne: userId } }) // Exclude current user
+      .find({ userId: { $ne: userId } })
       .project({ distance: 1, latitude: 1, longitude: 1, userId: 1 })
       .toArray();
 
-    console.log("Found other users:", matchDistanceArray.length);
-
     for (const item of matchDistanceArray) {
-      if (item.latitude && item.longitude) { // Check if coordinates exist
-        const distance = calculateDistance(
-          myPreferences.latitude,
-          myPreferences.longitude,
-          item.latitude,
-          item.longitude
-        );
-        console.log(`Distance to ${item.userId}: ${distance}km`);
-
-        if (distance <= myPreferences.distance && distance <= item.distance) {
+      if (item.latitude && item.longitude) {
+        const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, item.latitude, item.longitude);
+        if (distance < myPreferences.distance && distance < item.distance) {
           matchWithinDistance.push(item.userId);
-          console.log(`User ${item.userId} is within distance range`);
         }
       }
     }
 
-    console.log("Users within distance:", matchWithinDistance);
-
-    if (matchWithinDistance.length === 0) {
-      return res.json({ matchFound: false, reason: "No users within distance" });
-    }
-
-    // Look for other users with matching preferences
     const potentialMatch = await db.collection('matchPreferences').findOne({
-      userId: { $in: matchWithinDistance }, // Must be within distance
+      userId: { $in: matchWithinDistance },
       sport: myPreferences.sport,
       skillLevel: myPreferences.skillLevel,
       mode: myPreferences.mode,
       matchType: myPreferences.matchType
     });
 
-    console.log("Potential match found:", potentialMatch);
-
     if (!potentialMatch) {
-      return res.json({ matchFound: false, reason: "No matching preferences" });
+      return res.json({ matchFound: false });
     }
 
     const user1 = myPreferences;
     const user2 = potentialMatch;
-    console.log("USER 1:", user1);
-    console.log("USER 2:", user2);
-    
-    const distance = calculateDistance(
-      myPreferences.latitude,
-      myPreferences.longitude,
-      potentialMatch.latitude,
-      potentialMatch.longitude
-    );
+    console.log("USER 1: ", user1);
+    console.log("USER 2: ", user2);
+    const distance = calculateDistance(myPreferences.latitude, myPreferences.longitude, potentialMatch.latitude, potentialMatch.longitude);
 
-    // Create the match
     const matchData = {
       matchID: `match_${userId}_${potentialMatch.userId}_${Date.now()}`,
       player1: userId,
@@ -277,46 +238,30 @@ app.get('/api/matchmaking/check-for-match', jwtCheck, async (req, res) => {
       player2: potentialMatch.userId,
       player2Name: user2 ? user2.name : 'Unknown Player',
       sport: myPreferences.sport,
-      distance: Math.round(distance * 100) / 100, // Round to 2 decimal places
+      distance: distance,
       skillLevel: myPreferences.skillLevel,
       mode: myPreferences.mode,
       matchType: myPreferences.matchType,
-      timestamp: new Date().toISOString(), // Use ISO string for consistency
-      status: 'pending',
-      createdAt: new Date()
+      timestamp: new Date().toLocaleString(),
+      status: 'pending'
     };
 
-    console.log("Creating match:", matchData);
-
-    // Save match to database
-    const matchResult = await db.collection('matches').insertOne(matchData);
-    console.log("Match saved with ID:", matchResult.insertedId);
-
-    // Remove both users from matchmaking queue
-    const deleteResult = await db.collection('matchPreferences').deleteMany({
+    await db.collection('matches').insertOne(matchData);
+    await db.collection('matchPreferences').deleteMany({
       userId: { $in: [userId, potentialMatch.userId] }
     });
-    console.log("Removed from queue:", deleteResult.deletedCount, "users");
 
     return res.json({
       matchFound: true,
-      match: {
-        ...matchData,
-        _id: matchResult.insertedId
-      }
+      match: matchData
     });
   } catch (error) {
     console.error('Error checking for matches:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({
-      error: 'Server error',
-      message: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.post('/api/matchmaking/create-match', jwtCheck, async (req, res) => {
+app.post('/api/matchmaking/create-match', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
     console.log("Creating match for user:", userId);
@@ -325,7 +270,6 @@ app.post('/api/matchmaking/create-match', jwtCheck, async (req, res) => {
     const db = connect.db();
 
     await db.collection('matches').insertOne(matchData);
-
     await db.collection('matchPreferences').deleteMany({
       userId: { $in: [matchData.player1, matchData.player2] }
     });
@@ -337,15 +281,13 @@ app.post('/api/matchmaking/create-match', jwtCheck, async (req, res) => {
   }
 });
 
-app.post('/api/matchmaking/leave-queue', jwtCheck, async (req, res) => {
+app.post('/api/matchmaking/leave-queue', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
     console.log("User leaving queue:", userId);
 
     const db = connect.db();
-
     await db.collection('matchPreferences').deleteMany({ userId: userId });
-
     res.json({ success: true });
   } catch (error) {
     console.error('Error leaving queue:', error);
@@ -353,85 +295,41 @@ app.post('/api/matchmaking/leave-queue', jwtCheck, async (req, res) => {
   }
 });
 
-app.get('/api/matchmaking/user-matches', jwtCheck, async (req, res) => {
+app.get('/api/matchmaking/user-matches', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
     console.log("Getting matches for user:", userId);
 
     const db = connect.db();
-
-    // Find matches where user is player1 or player2
     const matches = await db.collection('matches').find({
-      $or: [
-        { player1: userId },
-        { player2: userId }
-      ]
-    }).sort({ createdAt: -1 }).toArray(); // Sort by newest first
-
-    console.log(`Found ${matches.length} matches for user ${userId}`);
+      $or: [{ player1: userId }, { player2: userId }]
+    }).toArray();
 
     res.json({ matches: matches });
   } catch (error) {
     console.error('Error getting user matches:', error);
-    res.status(500).json({ error: 'Server error', message: error.message });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.get('/api/matchmaking/match/:matchId', jwtCheck, async (req, res) => {
+app.get('/api/matchmaking/match/:matchId', async (req, res) => {
   try {
     const matchId = req.params.matchId;
     const db = connect.db();
-
-    console.log("Looking for match with ID:", matchId);
-
-    // Try to find by matchID field first, then by _id
-    let match = await db.collection('matches').findOne({ matchID: matchId });
-    
-    if (!match) {
-      // Try by ObjectId if it's a valid ObjectId
-      try {
-        match = await db.collection('matches').findOne({ _id: new ObjectId(matchId) });
-      } catch (objectIdError) {
-        // Not a valid ObjectId, that's fine
-      }
-    }
+    const match = await db.collection('matches').findOne({ matchID: matchId });
 
     if (!match) {
-      console.log("Match not found");
       return res.status(404).json({ error: 'Match not found' });
     }
 
-    console.log("Found match:", match);
     res.json({ match: match });
   } catch (error) {
     console.error('Error getting match details:', error);
-    res.status(500).json({ error: 'Server error', message: error.message });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-app.get('/api/matchmaking/check-preferences', jwtCheck, async (req, res) => {
-  try {
-    const userId = req.auth.payload.sub;
-    console.log("Checking preferences for user:", userId);
-
-    const db = connect.db();
-
-    // Check if user has matchmaking preferences set
-    const preferences = await db.collection('matchPreferences').findOne({ userId: userId });
-    
-    console.log("User preferences found:", preferences ? "Yes" : "No");
-
-    res.json({ 
-      hasPreferences: !!preferences,
-      preferences: preferences || null
-    });
-  } catch (error) {
-    console.error('Error checking preferences:', error);
-    res.status(500).json({ error: 'Server error', message: error.message });
-  }
-});
-
-app.get('/api/conversations', jwtCheck, async (req, res) => {
+app.get('/api/conversations', async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
 
@@ -478,13 +376,11 @@ app.get('/api/conversations', jwtCheck, async (req, res) => {
   }
 });
 
-//Event Routes
-app.get('/api/events', jwtCheck, async (req, res) => {
+// Event Routes
+app.get('/api/events', async (req, res) => {
   try {
     const db = connect.db();
-
     const events = await db.collection('events').find({}).toArray();
-
     res.json({ events });
   } catch (error) {
     console.error('Error fetching events:', error);
@@ -492,10 +388,9 @@ app.get('/api/events', jwtCheck, async (req, res) => {
   }
 });
 
-app.post('/api/events/create', jwtCheck, async (req, res) => {
+app.post('/api/events/create', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
-
     const { name, description, date, time, location } = req.body;
 
     if (!name || !date || !location) {
@@ -503,7 +398,6 @@ app.post('/api/events/create', jwtCheck, async (req, res) => {
     }
 
     const db = connect.db();
-
     const event = {
       creatorId: userId,
       name,
@@ -530,11 +424,10 @@ app.post('/api/events/create', jwtCheck, async (req, res) => {
   }
 });
 
-app.get('/api/events/:eventId', jwtCheck, async (req, res) => {
+app.get('/api/events/:eventId', async (req, res) => {
   try {
     const eventId = req.params.eventId;
     const db = connect.db();
-
     const event = await db.collection('events').findOne({ _id: new ObjectId(eventId) });
 
     if (!event) {
@@ -548,13 +441,12 @@ app.get('/api/events/:eventId', jwtCheck, async (req, res) => {
   }
 });
 
-app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
+app.post('/api/events/:eventId/join', async (req, res) => {
   try {
     const eventId = req.params.eventId;
     const userId = req.auth.payload.sub;
 
     const db = connect.db();
-
     const result = await db.collection('events').updateOne(
       { _id: new ObjectId(eventId) },
       { $addToSet: { participants: userId } }
@@ -571,8 +463,8 @@ app.post('/api/events/:eventId/join', jwtCheck, async (req, res) => {
   }
 });
 
-// FIXED: Chat routes
-app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
+// Chat Routes
+app.get('/api/chat/:conversationID', async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
 
@@ -593,10 +485,6 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
     let conversation = await db.collection('conversations').findOne({
       _id: conversationID
     });
-
-    if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
-    }
 
     let recipientName = await db.collection('users').findOne({
       _id: { $in: conversation.participants.filter(id => id.toString() !== user._id.toString()) }
@@ -644,7 +532,7 @@ app.get('/api/chat/:conversationID', jwtCheck, async (req, res) => {
   }
 });
 
-app.post('/api/chat/send', jwtCheck, async (req, res) => {
+app.post('/api/chat/send', async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
 
@@ -676,8 +564,10 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      _id: result.insertedId,
-      timestamp: msg.sentAt
+      message: {
+        ...msg,
+        _id: result.insertedId
+      }
     });
 
     await db.collection('conversations').updateOne(
@@ -697,13 +587,11 @@ app.post('/api/chat/send', jwtCheck, async (req, res) => {
   }
 });
 
-app.get('/api/users/search', jwtCheck, async (req, res) => {
+app.get('/api/users/search', async (req, res) => {
   try {
     const searchQuery = req.query.q || '';
     const db = connect.db();
-    
     const searchPattern = new RegExp(`^${searchQuery}`, 'i');
-    
     const currentUser = await db.collection('users').findOne({ auth0Id: req.auth.payload.sub });
     const query = { name: searchPattern };
 
@@ -728,8 +616,7 @@ app.get('/api/users/search', jwtCheck, async (req, res) => {
   }
 });
 
-// FIXED: Conversation creation route
-app.post('/api/conversations/create', jwtCheck, async (req, res) => {
+app.post('/api/conversations/create', async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
     const { recipientId } = req.body;
@@ -749,26 +636,15 @@ app.post('/api/conversations/create', jwtCheck, async (req, res) => {
       return res.status(404).json({ error: 'Current user not found' });
     }
 
-    // FIXED: Proper ObjectId conversion with error handling
-    let recipientObjectId;
-    try {
-      recipientObjectId = new ObjectId(recipientId);
-    } catch (error) {
-      return res.status(400).json({ error: 'Invalid recipient ID format' });
-    }
-
-    // Check if recipient exists
-    const recipient = await db.collection('users').findOne({ _id: recipientObjectId });
+    const recipient = await db.collection('users').findOne({ _id: new ObjectId(recipientId) });
     if (!recipient) {
       return res.status(404).json({ error: 'Recipient not found' });
     }
 
-    // FIXED: Improved duplicate check
     const existingConversation = await db.collection('conversations').findOne({
-      $and: [
-        { participants: currentUser._id },
-        { participants: recipientObjectId }
-      ]
+      participants: {
+        $all: [currentUser._id, new ObjectId(recipientId)]
+      }
     });
 
     if (existingConversation) {
@@ -778,13 +654,10 @@ app.post('/api/conversations/create', jwtCheck, async (req, res) => {
       });
     }
 
-    // Create a new conversation
     const newConversation = {
-      participants: [currentUser._id, recipientObjectId],
-      createdAt: new Date(),
-      lastMessage: '',
+      participants: [currentUser._id, new ObjectId(recipientId)],
       lastMessageDate: new Date(),
-      unread: false
+      lastMessage: '',
     };
 
     const result = await db.collection('conversations').insertOne(newConversation);
@@ -795,12 +668,12 @@ app.post('/api/conversations/create', jwtCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating conversation:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// FIXED: Betting routes
-app.post('/api/bets/makePool', jwtCheck, async (req, res) => {
+// Betting Routes
+app.post('/api/bets/makePool', async (req, res) => {
   try {
     const { team1Name, team2Name } = req.body;
     const db = connect.db();
@@ -815,20 +688,17 @@ app.post('/api/bets/makePool', jwtCheck, async (req, res) => {
     }
 
     const insertResults = await db.collection('bets').insertOne(insertData);
-
-    res.json({ success: true, bettingId: insertResults.insertedId })
-
+    res.json({ success: true, bettingId: insertResults.insertedId });
   } catch (error) {
     console.error("Error:", error);
     console.error(error.stack);
     res.status(500).json({ error: 'Server error', message: error.message });
   }
-})
+});
 
-// FIXED: Variable name bug and logic
-app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
+app.post('/api/bets/makeBet/:betId', async (req, res) => {
   try {
-    const { userId, name, betAmount, teamToBet } = req.body; // FIXED: Consistent variable name
+    const { userId, name, betAmount, teamToBet } = req.body;
     const betId = req.params.betId;
     const db = connect.db();
 
@@ -838,7 +708,7 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
       name: name
     }
 
-    if (teamToBet == 1) { // FIXED: Use correct variable name
+    if (teamToBet == 1) {
       const result = await db.collection('bets').updateOne(
         { _id: new ObjectId(betId) },
         {
@@ -853,9 +723,8 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
       if (result.matchedCount === 0) {
         return res.status(404).json({ error: 'Betting pool not found' });
       }
-
-      return res.json({ success: true })
-    } else if (teamToBet == 2) { // FIXED: Use correct variable name
+      return res.json({ success: true });
+    } else if (teamToBet == 2) {
       const result = await db.collection('bets').updateOne(
         { _id: new ObjectId(betId) },
         {
@@ -870,32 +739,30 @@ app.post('/api/bets/makeBet/:betId', jwtCheck, async (req, res) => {
       if (result.matchedCount === 0) {
         return res.status(404).json({ error: 'Betting pool not found' });
       }
-      return res.json({ success: true })
+      return res.json({ success: true });
     } else {
       return res.status(400).json({ error: 'Invalid team selection' });
     }
-
   } catch (error) {
     console.error("Error:", error);
     console.error(error.stack);
     res.status(500).json({ error: 'Server error', message: error.message });
   }
-})
+});
 
-// FIXED: Missing database connection
-app.get('/api/bets/bettingDetails/:betId', jwtCheck, async (req, res) => {
+app.get('/api/bets/bettingDetails/:betId', async (req, res) => {
   try {
-    const betId = req.params.betId
-    const db = connect.db(); // FIXED: Missing database connection
+    const betId = req.params.betId;
+    const db = connect.db(); // Fixed: Added missing database connection
 
     let bet = await db.collection('bets').findOne({ _id: new ObjectId(betId) });
 
     if (!bet) {
-      return res.status(404).json({ success: false, error: "Betting pool not found" })
+      return res.status(404).json({ success: false, error: "Betting pool not found" });
     }
 
     let team1Pool = 0;
-    let team1Names = []
+    let team1Names = [];
     for (let i = 0; i < bet.team1Betters.length; i++) {
       team1Names.push(bet.team1Betters[i].name);
       team1Pool += bet.team1Betters[i].bet;
@@ -918,17 +785,15 @@ app.get('/api/bets/bettingDetails/:betId', jwtCheck, async (req, res) => {
       team2Odds: team2Pool > 0 ? ((bet.pot / team2Pool) * 100) : 0
     }
 
-    res.json({ success: true, data: toSend })
-
+    res.json({ success: true, data: toSend });
   } catch (error) {
     console.error("Error:", error);
     console.error(error.stack);
     res.status(500).json({ error: 'Server error', message: error.message });
   }
-})
+});
 
-// Mark conversation as read
-app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) => {
+app.put('/api/conversations/:conversationID/read', async (req, res) => {
   try {
     const auth0ID = req.auth.payload?.sub;
     const conversationID = req.params.conversationID;
@@ -967,9 +832,12 @@ app.put('/api/conversations/:conversationID/read', jwtCheck, async (req, res) =>
 app.listen(PORT, async () => {
   try {
     await connect.connect();
-    console.log('Server is running on port ' + PORT + ' and connected to MongoDB');
+    console.log('🚀 Server running on port', PORT);
+    console.log('📁 Serving static files from ../dist/');
+    console.log('🔒 /api routes protected with JWT');
+    console.log('💾 Connected to MongoDB');
   } catch (err) {
     console.error('Failed to connect to database:', err);
-    console.log('Server is running on port ' + PORT + ' but NOT connected to MongoDB');
+    console.log('⚠️  Server running on port', PORT, 'but database connection failed');
   }
 });
