@@ -10,14 +10,12 @@ export default function BackButton() {
       <div onClick={() => lastPage(-1)} className="pr-2">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          height="24px"
+          height="20px"
           viewBox="0 -960 960 960"
-          strokeWidth={strokeWidth}
-          className="w-7 h-7 transition-transform hover:scale-125"
-          width="24px"
-          fill="#000000"
+          width="20px"
+          fill="#FFFFFF"
         >
-          <path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z" />
+          <path d="m330-444 201 201-51 51-288-288 288-288 51 51-201 201h438v72H330Z" />
         </svg>
       </div>
     </>
