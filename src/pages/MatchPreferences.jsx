@@ -153,8 +153,8 @@ export default function MatchPreferences() {
                 />
                 <div className="flex justify-between text-xs text-white text-opacity-70">
                   <span>1 km</span>
-                  <span>10 km</span>
-                  <span>20 km</span>
+                  <span>25 km</span>
+                  <span>50 km</span>
                 </div>
               </div>
               
