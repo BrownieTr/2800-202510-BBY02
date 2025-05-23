@@ -1,123 +1,129 @@
-// Create a new file called ProfileEditForm.jsx in your sections folder
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import Button from '../components/ui/button';
+import GlassButton from '../components/ui/glassButton';
 
 export default function ProfileEditForm({ userData, onSave, onCancel }) {
-    const { getAccessTokenSilently } = useAuth0();
-    const [formData, setFormData] = useState({
-        name: userData?.name || '',
-        email: userData?.email || '',
-        address: userData?.address || '',
-        country: userData?.country || '',
-        preferences: userData?.preferences || ''
-    });
+  const { getAccessTokenSilently } = useAuth0();
+  const [formData, setFormData] = useState({
+    name: userData?.name || '',
+    email: userData?.email || '',
+    address: userData?.address || '',
+    country: userData?.country || '',
+    preferences: userData?.preferences || '',
+  });
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        try {
-            // Get the auth token
-            const token = await getAccessTokenSilently();
-            
-            // Send updated data to server
-            const response = await fetch('http://localhost:3000/api/profile/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to update profile');
-            }
-            
-            const updatedProfile = await response.json();
-            
-            // Call the onSave callback with the updated data
-            onSave(updatedProfile);
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            // Still call onSave with the form data so UI updates
-            // even if server update fails
-            onSave(formData);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = await getAccessTokenSilently();
 
-    return (
-        <form onSubmit={handleSubmit} className="profile-edit-form">
-            <div className="form-grid">
-                <div className="form-group">
-                    <label htmlFor="name">Name</label>
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                    />
-                </div>
-                
-                <div className="form-group">
-                    <label htmlFor="email">Email</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        disabled={userData?.email ? true : false} // Disable if email is from Auth0
-                    />
-                </div>
-                
-                <div className="form-group">
-                    <label htmlFor="address">Address</label>
-                    <input
-                        type="text"
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                    />
-                </div>
-                
-                <div className="form-group">
-                    <label htmlFor="country">Country</label>
-                    <input
-                        type="text"
-                        id="country"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleChange}
-                    />
-                </div>
-                
-                <div className="form-group">
-                    <label htmlFor="preferences">Sport Preference</label>
-                    <input
-                        type="text"
-                        id="preferences"
-                        name="preferences"
-                        value={formData.preferences}
-                        onChange={handleChange}
-                    />
-                </div>
-            </div>
-            
-            <div className="button-group">
-                <Button type="button" onClick={onCancel}>Cancel</Button>
-                <Button type="submit">Save</Button>
-            </div>
-        </form>
-    );
+      const response = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to update profile');
+
+      const updatedProfile = await response.json();
+      onSave(updatedProfile);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      onSave(formData); // fallback to local update
+    }
+  };
+
+  const inputBaseClass = "shadow appearance-none border rounded w-full py-2 px-3 text-white-700 leading-tight focus:outline-none focus:shadow-outline";
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full space-y-6">
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <label htmlFor="name" className="block text-white text-opacity-80 font-medium mb-1">Name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            className={inputBaseClass}
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Your name"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="email" className="block text-white text-opacity-80 font-medium mb-1">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            className={`${inputBaseClass} ${userData?.email ? 'opacity-70 cursor-not-allowed' : ''}`}
+            value={formData.email}
+            onChange={handleChange}
+            disabled={userData?.email ? true : false}
+            placeholder="Your email"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="address" className="block text-white text-opacity-80 font-medium mb-1">Address</label>
+          <input
+            type="text"
+            id="address"
+            name="address"
+            className={inputBaseClass}
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Your address"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="country" className="block text-white text-opacity-80 font-medium mb-1">Country</label>
+          <input
+            type="text"
+            id="country"
+            name="country"
+            className={inputBaseClass}
+            value={formData.country}
+            onChange={handleChange}
+            placeholder="Your country"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="preferences" className="block text-white text-opacity-80 font-medium mb-1">Sport Preference</label>
+          <input
+            type="text"
+            id="preferences"
+            name="preferences"
+            className={inputBaseClass}
+            value={formData.preferences}
+            onChange={handleChange}
+            placeholder="Your favorite sport"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-4 mt-6">
+        <GlassButton onClick={onCancel}>
+          Cancel
+        </GlassButton>
+        <GlassButton type="submit">
+          Save Changes
+        </GlassButton>
+      </div>
+    </form>
+  );
 }

@@ -1,4 +1,3 @@
-import React from "react";
 import ClickableIcons from "../ui/clickableIcons";
 
 export default function footer({ brandName = "brand name", externalLinks }) {

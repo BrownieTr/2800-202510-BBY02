@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import Navbar from "../components/layout/navbar";
-import EventCard from "../components/ui/eventCard";
-import Footer from "../components/layout/stickyFooter";
-import ClickableIcons from "../components/ui/clickableIcons";
-import BackButton from "../components/ui/backButton";
+import GlassNavbar from "../components/layout/glassNavbar";
+import GlassTabBar from "../components/layout/glassTabBar";
+import GlassEventCard from "../components/ui/glassEventCard";
+import GlassButton from "../components/ui/glassButton";
+import ChatIcon from "../components/ui/chatIcon";
 
 export default function Events() {
   const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
@@ -13,6 +13,7 @@ export default function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -20,6 +21,31 @@ export default function Events() {
       loginWithRedirect();
     }
   }, [isAuthenticated, isLoading, loginWithRedirect]);
+
+  // Fetch current user info
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        const token = await getAccessTokenSilently();
+        const response = await fetch('/api/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUser(userData);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   // Fetch events data
   useEffect(() => {
@@ -31,7 +57,7 @@ export default function Events() {
         const token = await getAccessTokenSilently();
         
         // Fetch events from API
-        const response = await fetch('http://localhost:3000/api/events', {
+        const response = await fetch('/api/events', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -42,7 +68,16 @@ export default function Events() {
         }
         
         const data = await response.json();
-        setEvents(data.events || []);
+        const allEvents = data.events || [];
+        
+        // ADDED: Add participation status to each event
+        const currentUserId = currentUser?.auth0Id || currentUser?.sub;
+        const eventsWithStatus = allEvents.map(event => ({
+          ...event,
+          isUserParticipating: event.participants && event.participants.includes(currentUserId)
+        }));
+        
+        setEvents(eventsWithStatus);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching events:", err);
@@ -51,17 +86,17 @@ export default function Events() {
       }
     };
 
-    if (isAuthenticated) {
+    if (isAuthenticated && currentUser) {
       fetchEvents();
     }
-  }, [isAuthenticated, getAccessTokenSilently]);
+  }, [isAuthenticated, getAccessTokenSilently, currentUser]);
 
   // Handle joining an event
   const handleJoinEvent = async (eventId) => {
     try {
       const token = await getAccessTokenSilently();
       
-      const response = await fetch(`http://localhost:3000/api/events/${eventId}/join`, {
+      const response = await fetch(`/api/events/${eventId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -72,15 +107,18 @@ export default function Events() {
         throw new Error('Failed to join event');
       }
       
-      // Refresh the events list
-      const updatedEvents = await fetch('http://localhost:3000/api/events', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const data = await updatedEvents.json();
-      setEvents(data.events || []);
+      // Update the specific event's participation status locally
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event._id === eventId 
+            ? { 
+                ...event, 
+                isUserParticipating: true,
+                participants: [...(event.participants || []), currentUser?.auth0Id || currentUser?.sub]
+              }
+            : event
+        )
+      );
       
       alert("You've joined the event!");
     } catch (error) {
@@ -89,100 +127,132 @@ export default function Events() {
     }
   };
 
-  if (isLoading || loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  }
+  // ADDED: Handle viewing event details
+  const handleViewEventDetails = (eventId) => {
+    // For now, navigate to events page with event highlighted
+    // You can create a dedicated event details page later
+    console.log("Viewing details for event:", eventId);
+    
+    // Example: Could navigate to /events/{eventId} if you create that route
+    // navigate(`/events/${eventId}`);
+    
+    // For now, just show an alert with event info
+    const event = events.find(e => e._id === eventId);
+    if (event) {
+      alert(`Event Details:\n\n${event.name}\n${event.description}\n\nDate: ${event.date}\nTime: ${event.time || 'TBD'}\nLocation: ${event.location}\nParticipants: ${event.participants?.length || 0}`);
+    }
+  };
 
-  if (error) {
-    return <div className="text-red-500 text-center p-4">{error}</div>;
+  // Back icon
+  const backIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+  );
+
+  // Profile icon
+  const profileIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+  );
+
+  if (isLoading || loading) {
+    return (
+      <div className="flex justify-center items-center h-screen text-white">
+        <div className="bg-circle bg-circle-1"></div>
+        <div className="bg-circle bg-circle-2"></div>
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 relative mb-4">
+            <div className="absolute inset-0 rounded-full bg-white opacity-25 animate-ping"></div>
+            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-white bg-opacity-30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-white text-xl font-semibold">Loading events...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
-      <Navbar
-        iconLeft={<BackButton />}
-        header="PlayPal"
-        iconRight2={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24px"
-            viewBox="0 -960 960 960"
-            width="24px"
-            fill="#000000"
-          >
-            <path d="M80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z" />
-          </svg>
-        }
-        iconRight2To={"/messages"}
-      />
-      <div className="mt-5 mb-5 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-160px)] p-4">
-        {events.length > 0 ? (
-          events.map((event) => (
-            <EventCard 
-              key={event._id}
-              title={event.name}
-              description={event.description}
-              date={event.date}
-              time={event.time}
-              location={event.location}
-              participants={event.participants?.length || 0}
-              onJoin={() => handleJoinEvent(event._id)}
-            />
-          ))
-        ) : (
-          <div className="text-center p-4">
-            <p>No events found. Create a new event using the + button below!</p>
-          </div>
-        )}
+      {/* Background decoration */}
+      <div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] 
+      bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
       </div>
-      <Footer
-        iconLeft={
-          <ClickableIcons
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                height="24px"
-                viewBox="0 -960 960 960"
-                width="24px"
-                fill="#000000"
-              >
-                <path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
-              </svg>
-            }
-          />
-        }
-        iconMiddle={
-          <ClickableIcons
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                height="24px"
-                viewBox="0 -960 960 960"
-                width="24px"
-                fill="#000000"
-              >
-                <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
-              </svg>
-            }
-            to={"/createEvent"}
-          />
-        }
-        iconRight={
-          <ClickableIcons
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                height="24px"
-                viewBox="0 -960 960 960"
-                width="24px"
-                fill="#000000"
-              >
-                <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z" />
-              </svg>
-            }
-          />
-        }
+      <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px] 
+      bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
+      </div>
+      
+      <GlassNavbar
+        title="Events"
+        leftIcon={backIcon}
+        rightIcon={profileIcon}
+        rightIcon2={<ChatIcon/>}
+        onLeftIconClick={() => navigate("/home")}
+        onRightIconClick={() => navigate("/profile")}
+        onRightIcon2Click={() => navigate("/messages")}
       />
+      
+      <div className="app-container">
+        <main className="main-content">
+          {error && (
+            <div className="glass-card bg-red-500 bg-opacity-25">
+              <p className="text-white">{error}</p>
+            </div>
+          )}
+          
+          {events.length > 0 ? (
+            events.map((event) => (
+              <GlassEventCard
+                key={event._id}
+                eventId={event._id}
+                title={event.name}
+                description={event.description}
+                date={event.date}
+                time={event.time}
+                location={event.location}
+                participants={`${event.participants?.length || 0} participants`}
+                isUserParticipating={event.isUserParticipating}
+                onJoin={handleJoinEvent}
+                onViewDetails={handleViewEventDetails}
+              />
+            ))
+          ) : (
+            <div className="glass-card text-center">
+              <p>No events found. Create a new event!</p>
+            </div>
+          )}
+          
+          <GlassButton
+            className="fixed bottom-20 right-6 w-16 h-14 rounded-full flex items-center justify-center shadow-lg"
+            onClick={() => navigate("/createEvent")}
+            style={{zIndex: 99}}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </GlassButton>
+        </main>
+      </div>
+      
+      <GlassTabBar />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Button from '../components/ui/button';
+import GlassButton from '../components/ui/glassButton';
 import ProfileEditForm from './profileEditForm';
 
 export default function Profile_Details({ onButtonClick, userData, onProfileUpdate }) {
@@ -60,29 +60,44 @@ export default function Profile_Details({ onButtonClick, userData, onProfileUpda
   };
 
   return (
-    <section>
+    <div className="w-full">
       {isEditing ? (
-        <ProfileEditForm
-          userData={userData}
-          onSave={handleSave}
-          onCancel={handleCancel}
-        />
+        <div className="glass-card">
+          <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
+          <ProfileEditForm
+            userData={userData}
+            onSave={handleSave}
+            onCancel={handleCancel}
+          />
+        </div>
       ) : (
         <>
-          <div className="profile-grid">
-            {details.map(detail => (
-              <div key={detail.id} className="profile-card">
-                <h3>{detail.title}</h3>
-                <div className="detail">{detail.detail}</div>
-              </div>
-            ))}
-          </div>
-          <div>
-            <Button className='profile-buttons' onClick={() => handleButtonClick(0)}>Back</Button>
-            <Button className='profile-buttons' onClick={() => handleButtonClick(100)}>Edit</Button>
+          <div className="glass-card">
+            <h2 className="text-xl font-bold mb-4">Profile Details</h2>
+            
+            <div className="divide-y divide-white divide-opacity-10">
+              {details.map(detail => (
+                <div
+                  key={detail.id}
+                  className="flex items-center justify-between py-3"
+                >
+                  <h3 className="text-white opacity-80 font-medium">{detail.title}</h3>
+                  <div className="text-white text-sm md:text-base">{detail.detail}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-4 mt-6">
+              <GlassButton onClick={() => handleButtonClick(0)}>
+                Back
+              </GlassButton>
+              <GlassButton onClick={() => handleButtonClick(100)}>
+                Edit
+              </GlassButton>
+            </div>
           </div>
         </>
       )}
-    </section>
+    </div>
   );
 }

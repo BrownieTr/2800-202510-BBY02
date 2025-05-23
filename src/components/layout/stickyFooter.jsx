@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function StickyFooter({ iconLeft, iconRight, iconMiddle }) {
   return (
     <footer className="sticky bottom-0 z-50 bg-white w-full">

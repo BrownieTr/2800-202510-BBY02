@@ -9,7 +9,8 @@
     "client": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server/server.cjs"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
@@ -25,6 +26,7 @@
     "joi": "^17.13.3",
     "mongo": "^0.1.0",
     "react": "^19.0.0",
+    "react-datepicker": "^8.3.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.5.3"
   },
@@ -43,5 +45,8 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.6",
     "vite": "^6.3.1"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.41.0"
   }
 }

@@ -1,6 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
 import ClickableIcons from "../ui/clickableIcons";
+import Button from "../ui/button";
 
 export default function Navbar({
   iconLeft,
@@ -13,18 +12,23 @@ export default function Navbar({
 }) {
   return (
     <nav className="flex items-center justify-between py-4">
-      <div>
+      <div className="flex items-center">
         <ClickableIcons icon={iconLeft} to={iconLeftTo} />
       </div>
       <div className="flex-1 text-left">
         <p className="font-bold text-2xl">{header}</p>
       </div>
-      <div className="w-10 text-right">
-        <ClickableIcons icon={iconRight} to={iconRightTo} />
-      </div>
-      <div className="text-right">
-        <ClickableIcons icon={iconRight2} to={iconRight2To} />
-      </div>
+        {iconRight ? (
+          <Button onClick={iconRightTo}>{iconRight}</Button>
+        ) : (
+          <ClickableIcons icon={iconRight} to={iconRightTo} />
+        )}
+
+        {iconRight2 ? (
+          <Button className="ml-2" onClick={iconRight2To}> {iconRight2} </Button>
+        ) : (
+          <ClickableIcons icon={iconRight2} to={iconRight2To} />
+        )}
     </nav>
   );
 }
