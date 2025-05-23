@@ -60,7 +60,7 @@ export default function setUpProfile() {
 
     try {
       // Fetch existing users to check for username availability
-      const response = await fetch(`http://localhost:3000/users`, {
+      const response = await fetch(`http://localhost:10000/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
