@@ -9,13 +9,8 @@
     "client": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "scripts": {
-    "build": "vite build",
-    "dev": "concurrently \"npm run server\" \"vite\"", // local only
-    "server": "node server/server.cjs",
-    "start": "node server/server.cjs" // ← Render runs this
+    "preview": "vite preview",
+    "start": "node server/server.cjs"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
