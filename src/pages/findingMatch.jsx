@@ -59,9 +59,9 @@ export default function FindingMatch() {
 
       const quoter = setInterval(async () => {
         try {
-          setQuote(await getLoadingQuote(sport, 'tip'))
-        } catch {
-          // Handle error silently
+          setQuote(await getLoadingQuote(sport, 'tip', import.meta.env.VITE_AI_URI))
+        } catch(error) {
+          console.log(error)
         }
       }, 10000)
 
