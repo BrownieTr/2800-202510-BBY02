@@ -35,7 +35,7 @@ export default function NotificationBell() {
   const markAsRead = async (notificationId) => {
     try {
       const token = await getAccessTokenSilently();
-      await fetch(`http://localhost:3000/api/notifications/messages/${notificationId}/read`, {
+      await fetch(`http://localhost:10000/api/notifications/messages/${notificationId}/read`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
