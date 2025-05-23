@@ -1,9 +1,7 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function BackButton() {
   const lastPage = useNavigate();
-  const strokeWidth = 0.65;
 
   return (
     <>

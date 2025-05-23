@@ -1,11 +1,7 @@
 import GlassNavbar from '../components/layout/glassNavbar';
-import GlassButton from '../components/ui/glassButton';
 import LoginButton from '../components/ui/loginButton';
-import { useNavigate } from "react-router-dom";
 
 export default function Landing() {
-  const navigate = useNavigate();
-
   return (
     <div className="pt-6 relative min-h-screen from-slate-900 to-slate-800 text-white overflow-hidden pb-8">
       {/* Background decoration */}

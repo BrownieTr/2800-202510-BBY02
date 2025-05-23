@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import GlassNavbar from "../components/layout/glassNavbar";
@@ -9,9 +9,9 @@ import { getUserMatches } from "../services/matchMaking";
 import ChatIcon from "../components/ui/chatIcon";
 
 export default function Index() {
-  const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0();
+  const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
   const [userData, setUserData] = useState(null);
-  const [error, setError] = useState(null);
+  const [setError] = useState(null);
   const [matches, setMatches] = useState([]);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   const [latestEvent, setLatestEvent] = useState(null);
@@ -136,7 +136,7 @@ export default function Index() {
     }
   };
 
-  const handleViewEventDetails = (eventId) => {
+  const handleViewEventDetails = () => {
     if (latestEvent) {
       alert(`Event Details:\n\n${latestEvent.name}\n${latestEvent.description}\n\nDate: ${latestEvent.date}\nTime: ${latestEvent.time || 'TBD'}\nLocation: ${latestEvent.location}\nParticipants: ${latestEvent.participants?.length || 0}`);
     }

@@ -1,8 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
 import ClickableIcons from "../ui/clickableIcons";
 import Button from "../ui/button";
-import { useState } from "react";
 
 export default function Navbar({
   iconLeft,

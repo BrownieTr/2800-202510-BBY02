@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import GlassNavbar from "../components/layout/glassNavbar";
 import { forwardRef } from "react";
-import ChatIcon from "../components/ui/chatIcon";
 
 export default function CreateEvent() {
   const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();

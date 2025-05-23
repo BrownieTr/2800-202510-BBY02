@@ -1,4 +1,3 @@
-import React from "react";
 import ProfileIcon from "./profileIcon";
 
 export default function messageCard({

@@ -1,7 +1,3 @@
-import { useState } from 'react'
-
-
-
 /**
  * Uses IPInfo instead of navigator.geolocation since this is a lot faster. 
  */

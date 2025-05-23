@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import GlassNavbar from "../components/layout/glassNavbar";
@@ -10,7 +10,7 @@ export default function SportsBetting() {
   const navigate = useNavigate();
   const { user } = useAuth0();
   const [username, setUsername] = useState("Player");
-  const [balance, setBalance] = useState("1000");
+  const [balance] = useState("1000");
   
   useEffect(() => {
     if (user?.name) {

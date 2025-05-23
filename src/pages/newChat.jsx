@@ -13,7 +13,7 @@ export default function NewChat() {
   const [errorMessage, setErrorMessage] = useState("");
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const [preselectedPartner, setPreselectedPartner] = useState(null);
+  const [setPreselectedPartner] = useState(null);
 
   // Check for preselected partner from match details
   useEffect(() => {

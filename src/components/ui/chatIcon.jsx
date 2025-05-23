@@ -3,7 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 export default function ChatIcon() {
   const [hasUnread, setHasUnread] = useState(false);
-  const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
+  const { isAuthenticated, getAccessTokenSilently} = useAuth0();
 
   const checkUnreadMessages = useCallback(async () => {
     if (!isAuthenticated) return;

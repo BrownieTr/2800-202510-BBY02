@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link, useNavigate } from "react-router-dom";
 import GlassNavbar from "../components/layout/glassNavbar";
@@ -7,7 +7,7 @@ import GlassMessageCard from "../components/ui/glassMessageCard";
 import GlassButton from "../components/ui/glassButton";
 
 export default function Messages() {
-  const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
+  const { isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
 
   // State variables to manage conversations, loading state, and errors
   const [conversations, setConversations] = useState([]);
