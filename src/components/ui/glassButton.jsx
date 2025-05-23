@@ -1,8 +1,6 @@
-import React from 'react';
-
 export default function GlassButton({ 
   children, 
-  className = "",
+  className,
   type = 'button',
   onClick,
   isFeature = false,
