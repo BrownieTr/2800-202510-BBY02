@@ -25,7 +25,7 @@ export default function ProfileEditForm({ userData, onSave, onCancel }) {
     try {
       const token = await getAccessTokenSilently();
 
-      const response = await fetch('http://localhost:10000/api/profile/update', {
+      const response = await fetch('/api/profile/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
