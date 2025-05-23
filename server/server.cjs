@@ -1,8 +1,4 @@
-const jwtCheck = auth({
-  audience: 'https://api.playpal.com',
-  issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
-  tokenSigningAlg: 'RS256'
-});
+
 
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
@@ -14,6 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
+
+const jwtCheck = auth({
+  audience: 'https://api.playpal.com',
+  issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
+  tokenSigningAlg: 'RS256'
+});
 
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
