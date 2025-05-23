@@ -22,6 +22,10 @@
   --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   background: linear-gradient(-45deg, #121223, #1d1d35, #24243e, #252540);
   background-size: 400% 400%;
@@ -257,13 +261,14 @@ body {
 
 .event-details {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
   gap: 10px;
 }
 
 .event-detail {
   background: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
+  padding: 6px 15px;
   border-radius: 20px;
   font-size: 12px;
   display: flex;
