@@ -137,7 +137,7 @@ export default function setUpProfile() {
       };
 
       // Send a POST request to update the user's profile
-      const response = await fetch('http://localhost:3000/api/profile/update', {
+      const response = await fetch('http://localhost:10000/api/profile/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
