@@ -6,6 +6,7 @@ import GlassTabBar from "../components/layout/glassTabBar";
 import GlassButton from "../components/ui/glassButton";
 import GlassEventCard from "../components/ui/glassEventCard";
 import { getUserMatches } from "../services/matchMaking";
+import ChatIcon from "../components/ui/chatIcon";
 
 export default function Index() {
   const { isAuthenticated, isLoading, getAccessTokenSilently, user } = useAuth0();
@@ -141,39 +142,6 @@ export default function Index() {
     }
   };
 
-  const profileIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-  );
-  
-  const messageIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-    </svg>
-  );
-
   return (
     <div>
       {/* Background decoration */}
@@ -182,7 +150,7 @@ export default function Index() {
 
       <GlassNavbar
         title="PlayPal"
-        rightIcon2={messageIcon}
+        rightIcon2={<ChatIcon/>}
         onRightIcon2Click={() => navigate("/messages")}
       />
       

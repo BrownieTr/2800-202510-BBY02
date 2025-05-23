@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import GlassNavbar from "../components/layout/glassNavbar";
 import { forwardRef } from "react";
+import ChatIcon from "../components/ui/chatIcon";
 
 export default function CreateEvent() {
   const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
@@ -90,41 +91,6 @@ export default function CreateEvent() {
       <polyline points="12 19 5 12 12 5"></polyline>
     </svg>
   );
-  
-  // Profile icon
-  const profileIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-  );
-  
-  // Message icon
-  const messageIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-    </svg>
-  );
 
   // Custom input using forwardRef to make the popover work
   const CustomTimeInput = forwardRef(({ value, onClick }, ref) => (
@@ -194,7 +160,7 @@ export default function CreateEvent() {
       <GlassNavbar
         title="Events"
         leftIcon={backIcon}
-        rightIcon2={messageIcon}
+        rightIcon2={<ChatIcon/>}
         onLeftIconClick={() => navigate(-1)}
         onRightIcon2Click={() => navigate("/messages")}
       />
