@@ -1,3 +1,5 @@
+
+
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const connect = require('./databaseConnection.cjs')
@@ -8,6 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
+
+const jwtCheck = auth({
+  audience: 'https://api.playpal.com',
+  issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
+  tokenSigningAlg: 'RS256'
+});
 
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -49,15 +57,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(__dirname + "/public"));
 
-const jwtCheck = auth({
-  audience: 'https://api.playpal.com',
-  issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
-  tokenSigningAlg: 'RS256'
-});
-
-app.use(jwtCheck);
-
-app.get('/users', async (req, res) => {
+app.get('/users', jwtCheck, async (req, res) => {
   let db = connect.db();
   let data = await db.collection('users').find({}).toArray();
   res.send(data);
