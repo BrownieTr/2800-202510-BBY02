@@ -279,7 +279,7 @@ export default function Chat() {
       <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px]
       bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
       </div>
-      
+    
       {/* FIXED: Navbar with correct props */}
       <GlassNavbar
         title={messages.find(m => !m.sentByUser)?.senderName || "Chat"} // FIXED: Use 'title' instead of 'header'

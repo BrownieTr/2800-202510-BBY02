@@ -12,6 +12,7 @@ export default function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -19,6 +20,31 @@ export default function Events() {
       loginWithRedirect();
     }
   }, [isAuthenticated, isLoading, loginWithRedirect]);
+
+  // Fetch current user info
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        const token = await getAccessTokenSilently();
+        const response = await fetch('http://localhost:3000/api/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUser(userData);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   // Fetch events data
   useEffect(() => {
@@ -41,7 +67,16 @@ export default function Events() {
         }
         
         const data = await response.json();
-        setEvents(data.events || []);
+        const allEvents = data.events || [];
+        
+        // ADDED: Add participation status to each event
+        const currentUserId = currentUser?.auth0Id || currentUser?.sub;
+        const eventsWithStatus = allEvents.map(event => ({
+          ...event,
+          isUserParticipating: event.participants && event.participants.includes(currentUserId)
+        }));
+        
+        setEvents(eventsWithStatus);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching events:", err);
@@ -50,10 +85,10 @@ export default function Events() {
       }
     };
 
-    if (isAuthenticated) {
+    if (isAuthenticated && currentUser) {
       fetchEvents();
     }
-  }, [isAuthenticated, getAccessTokenSilently]);
+  }, [isAuthenticated, getAccessTokenSilently, currentUser]);
 
   // Handle joining an event
   const handleJoinEvent = async (eventId) => {
@@ -71,20 +106,39 @@ export default function Events() {
         throw new Error('Failed to join event');
       }
       
-      // Refresh the events list
-      const updatedEvents = await fetch('http://localhost:3000/api/events', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const data = await updatedEvents.json();
-      setEvents(data.events || []);
+      // Update the specific event's participation status locally
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event._id === eventId 
+            ? { 
+                ...event, 
+                isUserParticipating: true,
+                participants: [...(event.participants || []), currentUser?.auth0Id || currentUser?.sub]
+              }
+            : event
+        )
+      );
       
       alert("You've joined the event!");
     } catch (error) {
       console.error("Error joining event:", error);
       alert("Failed to join event. Please try again.");
+    }
+  };
+
+  // ADDED: Handle viewing event details
+  const handleViewEventDetails = (eventId) => {
+    // For now, navigate to events page with event highlighted
+    // You can create a dedicated event details page later
+    console.log("Viewing details for event:", eventId);
+    
+    // Example: Could navigate to /events/{eventId} if you create that route
+    // navigate(`/events/${eventId}`);
+    
+    // For now, just show an alert with event info
+    const event = events.find(e => e._id === eventId);
+    if (event) {
+      alert(`Event Details:\n\n${event.name}\n${event.description}\n\nDate: ${event.date}\nTime: ${event.time || 'TBD'}\nLocation: ${event.location}\nParticipants: ${event.participants?.length || 0}`);
     }
   };
 
@@ -134,12 +188,8 @@ export default function Events() {
   if (isLoading || loading) {
     return (
       <div className="flex justify-center items-center h-screen text-white">
-        <div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] 
-        bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
-        </div>
-        <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px]
-        bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
-        </div>
+        <div className="bg-circle bg-circle-1"></div>
+        <div className="bg-circle bg-circle-2"></div>
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 relative mb-4">
             <div className="absolute inset-0 rounded-full bg-white opacity-25 animate-ping"></div>
@@ -158,12 +208,8 @@ export default function Events() {
   return (
     <div>
       {/* Background decoration */}
-      <div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] 
-      bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
-      </div>
-      <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px]
-      bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
-      </div>
+      <div className="bg-circle bg-circle-1"></div>
+      <div className="bg-circle bg-circle-2"></div>
       
       <GlassNavbar
         title="Events"
@@ -185,13 +231,16 @@ export default function Events() {
             events.map((event) => (
               <GlassEventCard
                 key={event._id}
+                eventId={event._id}
                 title={event.name}
                 description={event.description}
                 date={event.date}
                 time={event.time}
                 location={event.location}
                 participants={`${event.participants?.length || 0} participants`}
-                onJoin={() => handleJoinEvent(event._id)}
+                isUserParticipating={event.isUserParticipating}
+                onJoin={handleJoinEvent}
+                onViewDetails={handleViewEventDetails}
               />
             ))
           ) : (
@@ -201,7 +250,7 @@ export default function Events() {
           )}
           
           <GlassButton
-            className="fixed bottom-20 right-6 w-18 h-14 rounded-full flex items-center justify-center shadow-lg"
+            className="fixed bottom-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
             onClick={() => navigate("/createEvent")}
             style={{zIndex: 99}}
           >

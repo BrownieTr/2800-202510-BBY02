@@ -146,15 +146,15 @@ export default function MatchPreferences() {
                   type="range"
                   name="distance"
                   min="1"
-                  max="20"
+                  max="50"
                   value={preferences.distance}
                   onChange={handleChange}
                   className="w-full accent-white"
                 />
                 <div className="flex justify-between text-xs text-white text-opacity-70">
                   <span>1 km</span>
-                  <span>10 km</span>
-                  <span>20 km</span>
+                  <span>25 km</span>
+                  <span>50 km</span>
                 </div>
               </div>
               
