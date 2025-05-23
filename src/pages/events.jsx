@@ -29,7 +29,7 @@ export default function Events() {
       
       try {
         const token = await getAccessTokenSilently();
-        const response = await fetch('http://localhost:10000/api/profile', {
+        const response = await fetch('/api/profile', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -57,7 +57,7 @@ export default function Events() {
         const token = await getAccessTokenSilently();
         
         // Fetch events from API
-        const response = await fetch('http://localhost:10000/api/events', {
+        const response = await fetch('/api/events', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -96,7 +96,7 @@ export default function Events() {
     try {
       const token = await getAccessTokenSilently();
       
-      const response = await fetch(`http://localhost:10000/api/events/${eventId}/join`, {
+      const response = await fetch(`/api/events/${eventId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

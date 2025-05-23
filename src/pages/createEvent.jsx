@@ -56,7 +56,7 @@ export default function CreateEvent() {
       const token = await getAccessTokenSilently();
       
       // Send data to backend
-      const response = await fetch('http://localhost:10000/api/events/create', {
+      const response = await fetch('/api/events/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

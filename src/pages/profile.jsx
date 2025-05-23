@@ -25,7 +25,7 @@ export default function Profile() {
                 const token = await getAccessTokenSilently();
                 
                 // Fetch profile
-                const response = await fetch('http://localhost:10000/api/profile', {
+                const response = await fetch('/api/profile', {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }

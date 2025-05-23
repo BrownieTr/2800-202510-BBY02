@@ -28,7 +28,7 @@ export default function Messages() {
   const fetchUserData = async () => {
     try {
       const token = await getAccessTokenSilently();
-      const response = await fetch("http://localhost:10000/api/profile", {
+      const response = await fetch("/api/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -53,7 +53,7 @@ export default function Messages() {
       const token = await getAccessTokenSilently();
 
       // Make a request to the backend API with the token
-      const response = await fetch("http://localhost:10000/api/conversations", {
+      const response = await fetch("/api/conversations", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -60,7 +60,7 @@ export default function setUpProfile() {
 
     try {
       // Fetch existing users to check for username availability
-      const response = await fetch(`http://localhost:10000/users`, {
+      const response = await fetch(`/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -137,7 +137,7 @@ export default function setUpProfile() {
       };
 
       // Send a POST request to update the user's profile
-      const response = await fetch('http://localhost:10000/api/profile/update', {
+      const response = await fetch('/api/profile/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -29,7 +29,7 @@ export default function Index() {
   const fetchUser = async () => {
     try {
       const token = await getAccessTokenSilently();
-      const response = await fetch(`http://localhost:10000/api/profile`, {
+      const response = await fetch(`/api/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

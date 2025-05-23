@@ -58,7 +58,7 @@ export default function Chat() {
   const fetchCurrentUser = async () => {
     try {
       const token = await getAccessTokenSilently();
-      const response = await fetch("http://localhost:10000/api/profile", {
+      const response = await fetch("/api/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -215,7 +215,7 @@ export default function Chat() {
 
         // Normal case - send to API
         const token = await getAccessTokenSilently();
-        const response = await fetch("http://localhost:10000/api/chat/send", {
+        const response = await fetch("/api/chat/send", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
