@@ -186,6 +186,25 @@ app.post('/api/matchmaking/save-preferences', async (req, res) => {
   }
 });
 
+// Check if user has active preferences
+app.get('/api/matchmaking/check-preferences', async (req, res) => {
+  try {
+    const userId = req.auth.payload.sub;
+    console.log("Checking preferences for user:", userId);
+
+    const db = connect.db();
+    const preferences = await db.collection('matchPreferences').findOne({ userId: userId });
+
+    res.json({
+      hasPreferences: !!preferences,
+      preferences: preferences || null
+    });
+  } catch (error) {
+    console.error('Error checking preferences:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.get('/api/matchmaking/check-for-match', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
