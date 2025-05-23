@@ -7,7 +7,7 @@ const connect = require('./databaseConnection.cjs')
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
 
