@@ -239,15 +239,6 @@ export default function Index() {
                   onJoin={handleJoinEvent}
                   onViewDetails={handleViewEventDetails}
                 />
-                
-                <div className="text-center">
-                  <GlassButton
-                    className="px-6 py-2"
-                    onClick={() => navigate("/events")}
-                  >
-                    View All Events
-                  </GlassButton>
-                </div>
               </div>
             ) : (
               <div className="glass-card text-center p-4">

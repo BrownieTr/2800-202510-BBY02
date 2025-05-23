@@ -257,13 +257,14 @@ body {
 
 .event-details {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
   gap: 10px;
 }
 
 .event-detail {
   background: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
+  padding: 6px 15px;
   border-radius: 20px;
   font-size: 12px;
   display: flex;
