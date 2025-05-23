@@ -25,6 +25,14 @@ export default function SportsBetting() {
       <polyline points="12 19 5 12 12 5"></polyline>
     </svg>
   );
+
+    // Profile icon
+  const profileIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>
+  );
   
   const sampleMatches = [
     {
@@ -64,14 +72,20 @@ export default function SportsBetting() {
   return (
     <div>
       {/* Background decoration */}
-      <div className="bg-circle bg-circle-1"></div>
-      <div className="bg-circle bg-circle-2"></div>
-      
+      <div className="fixed top-[-100px] left-[-100px] w-[300px] h-[300px] 
+      bg-pink-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
+      </div>
+      <div className="fixed bottom-[-100px] right-[-100px] w-[300px] h-[300px] 
+      bg-blue-400 rounded-full blur-3xl opacity-40 -z-10 pointer-events-none">
+      </div>
+    
       <GlassNavbar
         title="Sports Betting"
         leftIcon={backIcon}
+        rightIcon={profileIcon}
         rightIcon2={<ChatIcon/>}
-        onLeftIconClick={() => navigate(-1)}
+        onLeftIconClick={() => navigate("/home")}
+        onRightIconClick={() => navigate("/profile")}
         onRightIcon2Click={() => navigate("/messages")}
       />
       

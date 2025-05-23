@@ -160,9 +160,7 @@ export default function CreateEvent() {
       <GlassNavbar
         title="Events"
         leftIcon={backIcon}
-        rightIcon2={<ChatIcon/>}
         onLeftIconClick={() => navigate(-1)}
-        onRightIcon2Click={() => navigate("/messages")}
       />
 
       <div className="container mx-auto px-4 py-6 pt-20">
