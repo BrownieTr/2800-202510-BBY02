@@ -57,9 +57,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(__dirname + "/public"));
 
-app.use(jwtCheck);
-
-app.get('/users', async (req, res) => {
+app.get('/users', jwtCheck, async (req, res) => {
   let db = connect.db();
   let data = await db.collection('users').find({}).toArray();
   res.send(data);
