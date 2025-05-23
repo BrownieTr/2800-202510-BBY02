@@ -11,13 +11,13 @@ export default function ChatIcon() {
     try {
       const token = await getAccessTokenSilently();
       const [conversationsResponse, userResponse] = await Promise.all([
-        fetch("http://localhost:10000/api/conversations", {
+        fetch("/api/conversations", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
           cache: "no-store",
         }),
-        fetch("http://localhost:10000/api/profile", {
+        fetch("/api/profile", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
