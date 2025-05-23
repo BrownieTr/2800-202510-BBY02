@@ -12,7 +12,13 @@ export default function Landing() {
       <div className="fixed top-[-120px] left-[-120px] w-[400px] h-[400px] bg-pink-500 rounded-full blur-[180px] opacity-30 -z-10 pointer-events-none"></div>
       <div className="fixed bottom-[-120px] right-[-120px] w-[400px] h-[400px] bg-blue-500 rounded-full blur-[180px] opacity-30 -z-10 pointer-events-none"></div>
 
-      <GlassNavbar title="PlayPal" rightContent={<LoginButton />} />
+      <GlassNavbar 
+      title="PlayPal" 
+      rightContent={
+      <LoginButton 
+      className={`p-8 rounded-lg shadow-lg bg-gradient-to-tr from-pink-700 
+        via-purple-700 to-blue-700 text-white`} 
+      title={`Login/Signup`}/>} />
 
       <main className="px-6 pt-16 text-center max-w-6xl mx-auto">
         {/* Hero Section */}
@@ -23,9 +29,10 @@ export default function Landing() {
           <p className="text-2xl text-slate-200 opacity-90 mb-10 max-w-xl">
             Find people to play sports with, online or in person.
           </p>
-          <GlassButton className="px-10 py-5 text-xl font-semibold" onClick={() => navigate("/signup")}> 
-            Get Started
-          </GlassButton>
+          <LoginButton 
+          className="glass-button px-10 py-5 text-xl font-semibold"
+          title={"Get Started"}
+          />
         </section>
 
         {/* Features Section */}
