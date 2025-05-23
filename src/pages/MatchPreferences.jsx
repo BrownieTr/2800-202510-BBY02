@@ -146,7 +146,7 @@ export default function MatchPreferences() {
                   type="range"
                   name="distance"
                   min="1"
-                  max="20"
+                  max="50"
                   value={preferences.distance}
                   onChange={handleChange}
                   className="w-full accent-white"
