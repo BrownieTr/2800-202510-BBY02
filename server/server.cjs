@@ -1,3 +1,9 @@
+const jwtCheck = auth({
+  audience: 'https://api.playpal.com',
+  issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
+  tokenSigningAlg: 'RS256'
+});
+
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const connect = require('./databaseConnection.cjs')
@@ -48,12 +54,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(__dirname + "/public"));
-
-const jwtCheck = auth({
-  audience: 'https://api.playpal.com',
-  issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
-  tokenSigningAlg: 'RS256'
-});
 
 app.use(jwtCheck);
 
