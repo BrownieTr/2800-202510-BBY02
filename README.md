@@ -18,7 +18,7 @@ Team Members:
 - Raymond Yang
 - Luis Saberon
 - Yang Li
-- Person 5
+  
 ## Project Details
 Project Name: PlayPal
 Project Description: PlayPal is a web app to match people wanting to play sports against new competitors based on preferences like location, timing and ability to enjoy your chosen sport and compete against like-minded people within your community.
@@ -147,3 +147,4 @@ Luis Saberon: lsaberon@my.bcit.ca
 Raymond Yang: ryang74@my.bcit.ca
 Brownie Tran: ktran103@my.bcit.ca
 Yang Li: yLi
+
