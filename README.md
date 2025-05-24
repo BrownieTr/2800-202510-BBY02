@@ -147,3 +147,6 @@ Luis Saberon: lsaberon@my.bcit.ca
 Raymond Yang: ryang74@my.bcit.ca
 Brownie Tran: ktran103@my.bcit.ca
 Yang Li: yLi
+
+## Test logs
+https://docs.google.com/spreadsheets/d/1HuMw29xX7dp7Z9fjxfH7VxJB9zkjygJEXzDAoukRXkw/edit?gid=394496370#gid=394496370
