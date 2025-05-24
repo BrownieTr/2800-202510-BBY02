@@ -8,12 +8,14 @@ const PORT = process.env.PORT || 10000;
 const { auth } = require('express-oauth2-jwt-bearer');
 const { MongoClient, ObjectId } = require('mongodb');
 
+// JWT authentication middleware setup
 const jwtCheck = auth({
   audience: 'https://api.playpal.com',
   issuerBaseURL: 'https://dev-d0fbndwh4b5aqcbr.us.auth0.com/',
   tokenSigningAlg: 'RS256'
 });
 
+// Helper function to calculate distance between two lat/lon points (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
   lat1 = parseFloat(lat1);
   lon1 = parseFloat(lon1);
@@ -46,7 +48,7 @@ app.use(express.urlencoded({ extended: false }));
 // Serve built React app from dist folder
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Health check (no auth needed)
+// Health check endpoint (no auth needed)
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -67,6 +69,7 @@ app.get('/users', async (req, res) => {
 
 // API Routes (JWT automatically applied via /api middleware)
 app.get('/api/profile', async (req, res) => {
+  // Get user profile, create if not exists
   try {
     console.log("Full Auth0 token payload:", req.auth);
     const auth0Id = req.auth.payload?.sub;
@@ -111,6 +114,7 @@ app.get('/api/profile', async (req, res) => {
 });
 
 app.post('/api/profile/update', async (req, res) => {
+  // Update user profile information
   try {
     const auth0Id = req.auth.payload.sub;
     const { name, address, country, preferences, setUp, profilePic, email } = req.body;
@@ -139,6 +143,8 @@ app.post('/api/profile/update', async (req, res) => {
 });
 
 // Matchmaking Routes
+
+// Save matchmaking preferences for the user
 app.post('/api/matchmaking/save-preferences', async (req, res) => {
   try {
     console.log("Received save preferences request:");
@@ -186,7 +192,7 @@ app.post('/api/matchmaking/save-preferences', async (req, res) => {
   }
 });
 
-// Check if user has active preferences
+// Check if user has active matchmaking preferences
 app.get('/api/matchmaking/check-preferences', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
@@ -205,6 +211,7 @@ app.get('/api/matchmaking/check-preferences', async (req, res) => {
   }
 });
 
+// Check for a match based on preferences and distance
 app.get('/api/matchmaking/check-for-match', async (req, res) => {
   try {
     const userId = req.auth.payload.sub;
@@ -281,6 +288,7 @@ app.get('/api/matchmaking/check-for-match', async (req, res) => {
 });
 
 app.post('/api/matchmaking/create-match', async (req, res) => {
+  // Create a match manually (used for custom match creation)
   try {
     const userId = req.auth.payload.sub;
     console.log("Creating match for user:", userId);
@@ -301,6 +309,7 @@ app.post('/api/matchmaking/create-match', async (req, res) => {
 });
 
 app.post('/api/matchmaking/leave-queue', async (req, res) => {
+  // Remove user from matchmaking queue
   try {
     const userId = req.auth.payload.sub;
     console.log("User leaving queue:", userId);
@@ -315,6 +324,7 @@ app.post('/api/matchmaking/leave-queue', async (req, res) => {
 });
 
 app.get('/api/matchmaking/user-matches', async (req, res) => {
+  // Get all matches for the current user
   try {
     const userId = req.auth.payload.sub;
     console.log("Getting matches for user:", userId);
@@ -332,6 +342,7 @@ app.get('/api/matchmaking/user-matches', async (req, res) => {
 });
 
 app.get('/api/matchmaking/match/:matchId', async (req, res) => {
+  // Get details for a specific match
   try {
     const matchId = req.params.matchId;
     const db = connect.db();
@@ -349,6 +360,7 @@ app.get('/api/matchmaking/match/:matchId', async (req, res) => {
 });
 
 app.get('/api/conversations', async (req, res) => {
+  // Get all conversations for the current user
   try {
     const auth0ID = req.auth.payload?.sub;
 
@@ -397,6 +409,7 @@ app.get('/api/conversations', async (req, res) => {
 
 // Event Routes
 app.get('/api/events', async (req, res) => {
+  // Get all events
   try {
     const db = connect.db();
     const events = await db.collection('events').find({}).toArray();
@@ -408,6 +421,7 @@ app.get('/api/events', async (req, res) => {
 });
 
 app.post('/api/events/create', async (req, res) => {
+  // Create a new event
   try {
     const userId = req.auth.payload.sub;
     const { name, description, date, time, location } = req.body;
@@ -444,6 +458,7 @@ app.post('/api/events/create', async (req, res) => {
 });
 
 app.get('/api/events/:eventId', async (req, res) => {
+  // Get details for a specific event
   try {
     const eventId = req.params.eventId;
     const db = connect.db();
@@ -461,6 +476,7 @@ app.get('/api/events/:eventId', async (req, res) => {
 });
 
 app.post('/api/events/:eventId/join', async (req, res) => {
+  // Join an event as a participant
   try {
     const eventId = req.params.eventId;
     const userId = req.auth.payload.sub;
@@ -484,6 +500,7 @@ app.post('/api/events/:eventId/join', async (req, res) => {
 
 // Chat Routes
 app.get('/api/chat/:conversationID', async (req, res) => {
+  // Get all messages for a conversation
   try {
     const auth0ID = req.auth.payload?.sub;
 
@@ -552,6 +569,7 @@ app.get('/api/chat/:conversationID', async (req, res) => {
 });
 
 app.post('/api/chat/send', async (req, res) => {
+  // Send a message in a conversation
   try {
     const auth0ID = req.auth.payload?.sub;
 
@@ -607,6 +625,7 @@ app.post('/api/chat/send', async (req, res) => {
 });
 
 app.get('/api/users/search', async (req, res) => {
+  // Search for users by name (for starting new conversations)
   try {
     const searchQuery = req.query.q || '';
     const db = connect.db();
@@ -636,6 +655,7 @@ app.get('/api/users/search', async (req, res) => {
 });
 
 app.post('/api/conversations/create', async (req, res) => {
+  // Create a new conversation between two users
   try {
     const auth0ID = req.auth.payload?.sub;
     const { recipientId } = req.body;
@@ -692,6 +712,8 @@ app.post('/api/conversations/create', async (req, res) => {
 });
 
 // Betting Routes
+
+// Create a new betting pool
 app.post('/api/bets/makePool', async (req, res) => {
   try {
     const { team1Name, team2Name } = req.body;
@@ -716,6 +738,7 @@ app.post('/api/bets/makePool', async (req, res) => {
 });
 
 app.post('/api/bets/makeBet/:betId', async (req, res) => {
+  // Place a bet in a betting pool
   try {
     const { userId, name, betAmount, teamToBet } = req.body;
     const betId = req.params.betId;
@@ -770,6 +793,7 @@ app.post('/api/bets/makeBet/:betId', async (req, res) => {
 });
 
 app.get('/api/bets/bettingDetails/:betId', async (req, res) => {
+  // Get details for a specific betting pool
   try {
     const betId = req.params.betId;
     const db = connect.db(); // Fixed: Added missing database connection
@@ -813,6 +837,7 @@ app.get('/api/bets/bettingDetails/:betId', async (req, res) => {
 });
 
 app.put('/api/conversations/:conversationID/read', async (req, res) => {
+  // Mark a conversation as read
   try {
     const auth0ID = req.auth.payload?.sub;
     const conversationID = req.params.conversationID;
@@ -849,6 +874,7 @@ app.put('/api/conversations/:conversationID/read', async (req, res) => {
 });
 
 app.listen(PORT, async () => {
+  // Start the server and connect to the database
   try {
     await connect.connect();
     console.log('🚀 Server running on port', PORT);
