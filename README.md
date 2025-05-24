@@ -33,21 +33,22 @@ Techstack:
 ## File Structure
 
 |.gitignore
+  .env
   about.html
+  eslint.config.js
   index.html
   package-lock.json
   package.json
   postcss.config.js
   README.md
   tailwind.config.js
+  UIexample.html
   vite.config.js
-  .env
 |
 ├───public
 │       vite.svg
 │
 ├───server
-│       config.env
 │       databaseConnection.cjs
 │       server.cjs
 │
@@ -61,6 +62,8 @@ Techstack:
     ├───components
     │   ├───layout
     │   │       footer.jsx
+    │   │       glassNavbar.jsx
+    │   │       glassTabBar.jsx
     │   │       navbar.jsx
     │   │       stickyFooter.jsx
     │   │
@@ -71,8 +74,12 @@ Techstack:
     │           chatBubble.jsx
     │           chatIcon.jsx
     │           clickableIcons.jsx
-    │           DarkModeContext.jsx
     │           eventCard.jsx
+    │           glassBettingCard.jsx
+    │           glassButton.jsx
+    │           glassChatBubble.jsx
+    │           glassEventCard.jsx
+    │           glassMessageCard.jsx
     │           link.jsx
     │           loginButton.jsx
     │           logoutPopUp.jsx
@@ -86,10 +93,10 @@ Techstack:
     │       chat.jsx
     │       createEvent.jsx
     │       events.jsx
-    │       favSport.jsx
     │       findingMatch.jsx
     │       index.jsx
     │       landing.jsx
+    │       MatchDetails.jsx
     │       MatchPreferences.jsx
     │       messages.jsx
     │       newChat.jsx
@@ -106,19 +113,20 @@ Techstack:
     ├───services
     │       ai.js
     │       betting.js
-    │       config.env
     │       locationService.jsx
     │       matchMaking.js
     │       protectedRoutes.jsx
     │
     └───styles
             App.css
+            glassmorphic.css
             index.css
 
 
 ## Project Installation
 You will need javascript, react and vite, as well as a MongoDB account.
 You will need API keys from MongoDB, IPinfo, and Google GenAI
+You can view the webapp by clicking this link: https://two800-202510-bby02-qj7j.onrender.com/
 
 
 ## Features
@@ -129,8 +137,13 @@ Join events through the event page
 ## Credits, References, Licenses
 
 ## AI Acknowledgement
-AI is used as per Surprise Challenge #2 to generate a quote based on the sport the user is queueing up for.
+-AI is used as per Surprise Challenge #2 to generate a quote based on the sport the user is queueing up for.
+-Used AI to implement the search user feature. 
+-Used AI to help with CSS.
 
 ## Contact Information
 
 Luis Saberon: lsaberon@my.bcit.ca
+Raymond Yang: ryang74@my.bcit.ca
+Brownie Tran: ktran103@my.bcit.ca
+Yang Li: yLi
